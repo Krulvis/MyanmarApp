@@ -582,8 +582,8 @@ precipitation.App.OVERLAY_BASE_BUTTON_NAME = 'Create Overlay';
 
 precipitation.App.GRAPH_BASE_BUTTON_NAME = 'Create Graph';
 
-precipitation.App.DEFAULT_CENTER = {lng: 0.0, lat: 12.5};
-precipitation.App.DEFAULT_ZOOM = 3;
+precipitation.App.DEFAULT_CENTER = {lng: 96.95112549402336, lat: 18.00746449851361};
+precipitation.App.DEFAULT_ZOOM = 6;
 precipitation.App.MAX_ZOOM = 14;
 
 precipitation.App.CHIRPS_CLIMATE = 'UCSB-CHG/CHIRPS/DAILY';
