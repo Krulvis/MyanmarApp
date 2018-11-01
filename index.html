@@ -40,7 +40,7 @@
     <script src="/static/scripts/products.js"></script>
     <script src="/static/scripts/statistics.js"></script>
     <script src="/static/scripts/timesteps.js"></script>
-    <script src="/static/scripts/precipitation.js"></script>
+    <script src="/static/scripts/myanmar.js"></script>
     <script src="/static/scripts/inputFile.js"></script>
 
 </head>
@@ -104,6 +104,8 @@
                 <ul class="nav nav-tabs nav-justified">
                     <li class="nav-item"><a class="nav-link active show" data-toggle="tab" href="#country"><i
                             class="fas fa-globe-americas fa-lg fa-pull-left"></i>Country</a></li>
+                    <li class="nav-item"><a class="nav-link" data-toggle="tab" href="#region"><i
+                            class="fas fa-file fa-lg fa-pull-left"></i>Region</a></li>
                     <li class="nav-item"><a class="nav-link" data-toggle="tab" href="#shapefile"><i
                             class="fas fa-file fa-lg fa-pull-left"></i>Shapefile</a></li>
                     <li class="nav-item"><a class="nav-link" data-toggle="tab" href="#coordinate"><i
@@ -113,8 +115,10 @@
                 <div class="method-content tab-content">
                     <!-- Country Options -->
                     <div id="country" class="tab-pane fade in active show">
-                        <input class="form-control" id="selected-country" type="text"
-                               placeholder="Search for country...">
+
+                    </div>
+                    <div id="region" class="tab-pane fade in active show">
+
                     </div>
                     <!-- ShapeFile Options -->
                     <div id="shapefile" class="tab-pane fade">
@@ -260,7 +264,7 @@
 </div>
 <!-- Boot our JavaScript once the body has loaded. -->
 <script>
-    precipitation.boot(
+    myanmar.boot(
         '{{ key | safe }}');
 
 </script>

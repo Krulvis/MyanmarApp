@@ -6,7 +6,7 @@ statistics.resetRadios = function (type) {
     if (type === 'graph') {
         //Should be removed from all
     } else if (type === 'overlay') {
-        switch (precipitation.instance.selectionMethod) {
+        switch (myanmar.instance.selectionMethod) {
             case 'country':
                 this.addTo(options);
                 break;

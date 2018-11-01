@@ -6,7 +6,7 @@ $(function () {
         var title = tr.find('.title').html();
         console.log('Removing Marker: ' + title);
         var markers = [];
-        precipitation.instance.markers.forEach(function (marker) {
+        myanmar.instance.markers.forEach(function (marker) {
             if (marker.getTitle() !== title) {
                 markers.push(marker);
                 console.log("Removed at: " + marker.index);
@@ -14,7 +14,7 @@ $(function () {
                 marker.setMap(null);
             }
         });
-        precipitation.instance.markers = markers;
+        myanmar.instance.markers = markers;
         tr.remove();
     });
 });
@@ -25,12 +25,12 @@ $(function () {
  */
 markers.draw = function (draw) {
     if (draw) {
-        var map = precipitation.instance.map;
-        precipitation.instance.markers.forEach(function (marker) {
+        var map = myanmar.instance.map;
+        myanmar.instance.markers.forEach(function (marker) {
             marker.setMap(map);
         });
     } else {
-        precipitation.instance.markers.forEach(function (marker) {
+        myanmar.instance.markers.forEach(function (marker) {
             marker.setMap(null);
         });
     }
@@ -70,10 +70,10 @@ markers.addMarker = function (lat, lng, title) {
     var position = new google.maps.LatLng(lat, lng);
     var marker = new google.maps.Marker({
         position: position,
-        map: precipitation.instance.map,
+        map: myanmar.instance.map,
         title: title
     });
-    precipitation.instance.markers.push(marker);
+    myanmar.instance.markers.push(marker);
     console.log('Added marker: ' + marker.getTitle());
     var tableContent = '<tr><td>' + lat + '</td><td>' + lng + '</td><td class="title">' + title + '</td><td><button class="btn btn-danger remove-marker">Remove</button></td></tr>';
     $('.markers-table tbody').append(tableContent);
@@ -83,7 +83,7 @@ markers.addMarker = function (lat, lng, title) {
  * Returns JSON of all markers for EE
  */
 markers.getJSON = function () {
-    var features = $.map(precipitation.instance.markers, function (marker) {
+    var features = $.map(myanmar.instance.markers, function (marker) {
         var temp = {
             "type": "Feature",
             "properties": {

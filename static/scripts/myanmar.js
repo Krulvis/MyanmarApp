@@ -1,6 +1,6 @@
-precipitation = {};
+myanmar = {};
 
-precipitation.boot = function (key) {
+myanmar.boot = function (key) {
     // Load external libraries.
     //google.load('visualization', '1', {packages: ["corechart"]});
     google.load('maps', '3', {'other_params': 'key=' + key + '&libraries=drawing'});
@@ -8,14 +8,14 @@ precipitation.boot = function (key) {
     google.setOnLoadCallback(function () {
         google.charts.load("current", {packages: ['corechart']});
         google.charts.setOnLoadCallback(function () {
-            precipitation.instance = new precipitation.App();
-            precipitation.instance.initVals();
+            myanmar.instance = new myanmar.App();
+            myanmar.instance.initVals();
         });
 
     });
 };
 
-precipitation.App = function () {
+myanmar.App = function () {
     this.map = this.createMap();
 
     //Some styling (responsiveness of results panel)
@@ -25,7 +25,7 @@ precipitation.App = function () {
     settings.draggable();
     results.on('resizestop', function () {
         console.log('Resize complete');
-        precipitation.instance.showChart();
+        myanmar.instance.showChart();
     });
 
     //Get GeoJSON for all countries
@@ -36,7 +36,7 @@ precipitation.App = function () {
         });
         $("#selected-country").autocomplete({
             source: names,
-            select: precipitation.instance.handleCountryUIClick
+            select: myanmar.instance.handleCountryUIClick
         });
     });
 
@@ -59,15 +59,15 @@ precipitation.App = function () {
 
     //Add functionality to buttons
     $('#overlay-button').on('click', function (event) {
-        precipitation.instance.getOverlay();
+        myanmar.instance.getOverlay();
     });
 
     $('#graph-button').on('click', function (event) {
-        precipitation.instance.getGraph();
+        myanmar.instance.getGraph();
     });
 
     $('#download-csv-btn').click(function () {
-        var csvFormattedDataTable = precipitation.App.graphToCSV(precipitation.instance.chartData);
+        var csvFormattedDataTable = myanmar.App.graphToCSV(myanmar.instance.chartData);
         var encodedUri = 'data:application/csv;charset=utf-8,' + encodeURIComponent(csvFormattedDataTable);
         this.href = encodedUri;
         this.download = 'table-data.csv';
@@ -80,7 +80,7 @@ precipitation.App = function () {
 /**
  * Set the initial Values to use
  */
-precipitation.App.prototype.initVals = function () {
+myanmar.App.prototype.initVals = function () {
     this.targetRegion = null;
     this.selectedCountry = null;
     this.markers = [];
@@ -99,16 +99,16 @@ precipitation.App.prototype.initVals = function () {
  * The map is anchored to the DOM element with the CSS class 'map'.
  * @return {google.maps.Map} A map instance with the map type rendered.
  */
-precipitation.App.prototype.createMap = function () {
+myanmar.App.prototype.createMap = function () {
     var mapOptions = {
         backgroundColor: '#000000',
-        center: precipitation.App.DEFAULT_CENTER,
+        center: myanmar.App.DEFAULT_CENTER,
         //disableDefaultUI: true,
         streetViewControl: false,
         mapTypeControl: true,
         mapTypeControlOptions: {position: google.maps.ControlPosition.RIGHT_BOTTOM},
-        zoom: precipitation.App.DEFAULT_ZOOM,
-        maxZoom: precipitation.App.MAX_ZOOM
+        zoom: myanmar.App.DEFAULT_ZOOM,
+        maxZoom: myanmar.App.MAX_ZOOM
     };
     var mapEl = $('.map').get(0);
     return new google.maps.Map(mapEl, mapOptions);
@@ -119,17 +119,17 @@ precipitation.App.prototype.createMap = function () {
  * Retrieves the JSON data for each country
  * Loads the JSON as GeoJSON to the map's data, letting each country become a feature
  */
-precipitation.App.prototype.createCountries = function () {
+myanmar.App.prototype.createCountries = function () {
     this.map.data.loadGeoJson('static/polygons/myanmar_state_region_boundaries.json');
     this.map.data.setStyle(function (feature) {
-        return precipitation.App.UNSELECTED_STYLE;
+        return myanmar.App.UNSELECTED_STYLE;
     });
 };
 
 /**
  * Adds Rainfall Overlay to map using currently set Dates and targetRegion
  */
-precipitation.App.prototype.getOverlay = function () {
+myanmar.App.prototype.getOverlay = function () {
     var startDate = $('#startDate').val();
     var endDate = $('#endDate').val();
     var button = $('#overlay-button');
@@ -151,7 +151,7 @@ precipitation.App.prototype.getOverlay = function () {
             downloadImg.hide();
             downloadCSV.hide();
             error.hide();
-            precipitation.instance.clearOverlays();
+            myanmar.instance.clearOverlays();
         },
         error: function (data) {
             button.html('error');
@@ -162,11 +162,11 @@ precipitation.App.prototype.getOverlay = function () {
             error.show().html('Error: ' + data['error']);
         } else {
             error.show().html('Map is being drawn... Please wait before drawing new map!');
-            button.html(precipitation.App.OVERLAY_BASE_BUTTON_NAME);
+            button.html(myanmar.App.OVERLAY_BASE_BUTTON_NAME);
             var mapId = data['mapid'];
             var token = data['token'];
-            $('#legend-max span').html(precipitation.App.format(data['max']));
-            $('#legend-min span').html(precipitation.App.format(data['min']));
+            $('#legend-max span').html(myanmar.App.format(data['max']));
+            $('#legend-min span').html(myanmar.App.format(data['min']));
             downloadImg.show();
             $('#download-img-btn').attr("href", data['download_url']);
             var legend = $('#legend');
@@ -179,7 +179,7 @@ precipitation.App.prototype.getOverlay = function () {
 /**
  * Get Graph data for targetRegion
  */
-precipitation.App.prototype.getGraph = function () {
+myanmar.App.prototype.getGraph = function () {
     var startDate = $('#startDate').val();
     var endDate = $('#endDate').val();
     var button = $('#graph-button');
@@ -208,10 +208,10 @@ precipitation.App.prototype.getGraph = function () {
         }
     }).done((function (data) {
         if (data['error']) {
-            button.html(precipitation.App.GRAPH_BASE_BUTTON_NAME);
+            button.html(myanmar.App.GRAPH_BASE_BUTTON_NAME);
             error.show().html(data['error']);
         } else {
-            button.html(precipitation.App.GRAPH_BASE_BUTTON_NAME);
+            button.html(myanmar.App.GRAPH_BASE_BUTTON_NAME);
             this.chartTitle = this.selectionMethod === 'country' ? this.selectedCountry.getProperty('Country') : this.selectionMethod === 'coordinate' ? 'Markers' : 'ShapeFile';
             console.log(data);
             downloadCSV.show();
@@ -225,7 +225,7 @@ precipitation.App.prototype.getGraph = function () {
  * Returns true if anything is selected
  * @returns {boolean}
  */
-precipitation.App.prototype.checkSelections = function (product, statistic, timestep) {
+myanmar.App.prototype.checkSelections = function (product, statistic, timestep) {
     var error = $('#error-message');
     error.hide();
     switch (this.selectionMethod) {
@@ -271,7 +271,7 @@ precipitation.App.prototype.checkSelections = function (product, statistic, time
  * Handle Map Click (Places marker, Selects Country)
  * @param event
  */
-precipitation.App.prototype.handleMapClick = function (event) {
+myanmar.App.prototype.handleMapClick = function (event) {
     if (this.selectionMethod === 'coordinate') {
         markers.addMarkerFromClick(event);
     }
@@ -282,7 +282,7 @@ precipitation.App.prototype.handleMapClick = function (event) {
         console.log('Clicked: ' + name);
         this.selectedCountry = feature;
         this.map.data.revertStyle();
-        this.map.data.overrideStyle(feature, precipitation.App.SELECTED_STYLE);
+        this.map.data.overrideStyle(feature, myanmar.App.SELECTED_STYLE);
         $('#selected-country').val(name);
     }
 };
@@ -292,14 +292,14 @@ precipitation.App.prototype.handleMapClick = function (event) {
  * @param event
  * @param ui
  */
-precipitation.App.prototype.handleCountryUIClick = function (event, ui) {
+myanmar.App.prototype.handleCountryUIClick = function (event, ui) {
     var countryName = ui.item.label;
     console.log('Clicked: ' + countryName);
-    precipitation.instance.map.data.forEach(function (feature) {
+    myanmar.instance.map.data.forEach(function (feature) {
         if (feature.getProperty('Country') === countryName) {
-            precipitation.instance.map.data.revertStyle();
-            precipitation.instance.selectedCountry = feature;
-            precipitation.instance.map.data.overrideStyle(precipitation.instance.selectedCountry, precipitation.App.SELECTED_STYLE);
+            myanmar.instance.map.data.revertStyle();
+            myanmar.instance.selectedCountry = feature;
+            myanmar.instance.map.data.overrideStyle(myanmar.instance.selectedCountry, myanmar.App.SELECTED_STYLE);
             return;
         }
     })
@@ -310,7 +310,7 @@ precipitation.App.prototype.handleCountryUIClick = function (event, ui) {
  * @param {Array<Array<number>>} timeseries The timeseries data
  *     to plot in the chart.
  */
-precipitation.App.prototype.showChart = function () {
+myanmar.App.prototype.showChart = function () {
     $('.results').show();
     $('.results .title').show().text(this.chartTitle);
     var data = google.visualization.arrayToDataTable(this.chartData);
@@ -339,13 +339,13 @@ precipitation.App.prototype.showChart = function () {
  * @param eeToken
  * @param statistic
  */
-precipitation.App.prototype.addOverlay = function (eeMapId, eeToken) {
+myanmar.App.prototype.addOverlay = function (eeMapId, eeToken) {
     console.log('MapID: ' + eeMapId + ', Token: ' + eeToken);
     //var bounds = new google.maps.LatLngBounds();
     var maxZoom = 5;
     var overlay = new google.maps.ImageMapType({
         getTileUrl: function (tile, zoom) {
-            var url = precipitation.App.EE_URL + '/map/';
+            var url = myanmar.App.EE_URL + '/map/';
             maxZoom = zoom > maxZoom ? zoom : maxZoom;
             url += [eeMapId, zoom, tile.x, tile.y].join('/');
             url += '?token=' + eeToken;
@@ -364,7 +364,7 @@ precipitation.App.prototype.addOverlay = function (eeMapId, eeToken) {
 /**
  * Removes previously added Overlay Map Types (Used to remove Map Overlay Rainfall)
  */
-precipitation.App.prototype.clearOverlays = function () {
+myanmar.App.prototype.clearOverlays = function () {
     var overlays = this.map.overlayMapTypes;
     while (overlays[0]) {
         overlays.pop().setMap(null);
@@ -375,7 +375,7 @@ precipitation.App.prototype.clearOverlays = function () {
 /**
  * Hides results panel
  */
-precipitation.App.prototype.hidePanel = function () {
+myanmar.App.prototype.hidePanel = function () {
     $('.results').hide();
 };
 
@@ -383,7 +383,7 @@ precipitation.App.prototype.hidePanel = function () {
  * Click listener for when Selection Radio-buttons are clicked
  * @param event
  */
-precipitation.App.prototype.switchStyle = function (event) {
+myanmar.App.prototype.switchStyle = function (event) {
     var html = $(event.target).html();
     var style = html.substr(html.indexOf('</i>') + 4);
     console.log(style);
@@ -396,8 +396,8 @@ precipitation.App.prototype.switchStyle = function (event) {
     Reset buttons
      */
     this.clearOverlays();
-    $('#overlay-button').html(precipitation.App.OVERLAY_BASE_BUTTON_NAME);
-    $('#graph-button').html(precipitation.App.GRAPH_BASE_BUTTON_NAME);
+    $('#overlay-button').html(myanmar.App.OVERLAY_BASE_BUTTON_NAME);
+    $('#graph-button').html(myanmar.App.GRAPH_BASE_BUTTON_NAME);
 
     var overlayTab = $('#overlay-tab');
     var graphTab = $('#graph-tab');
@@ -416,7 +416,7 @@ precipitation.App.prototype.switchStyle = function (event) {
             this.map.data.revertStyle();
             markers.draw(false);
             if (this.selectedCountry != null) {
-                this.map.data.overrideStyle(this.selectedCountry, precipitation.App.SELECTED_STYLE);
+                this.map.data.overrideStyle(this.selectedCountry, myanmar.App.SELECTED_STYLE);
             }
             break;
         case 'shapefile':
@@ -434,7 +434,7 @@ precipitation.App.prototype.switchStyle = function (event) {
  * Changes the option menu depending on which type= [overlay/graph] is clicked
  * @param event
  */
-precipitation.App.prototype.switchOutput = function (event) {
+myanmar.App.prototype.switchOutput = function (event) {
     var method = this.selectionMethod;
     var type = $(event.target).text().toLowerCase();
     this.selectionType = type;
@@ -447,7 +447,7 @@ precipitation.App.prototype.switchOutput = function (event) {
  * Returns the selected Analysing Method
  * @returns {string}
  */
-precipitation.App.prototype.getProduct = function () {
+myanmar.App.prototype.getProduct = function () {
     var container = $('.products-container');
     if (container.length === 0) {
         return 'null';
@@ -469,7 +469,7 @@ precipitation.App.prototype.getProduct = function () {
  * Returns the selected Analysing Method
  * @returns {string}
  */
-precipitation.App.prototype.getTimestep = function () {
+myanmar.App.prototype.getTimestep = function () {
     var container = $('.timesteps-container');
     if (container.length === 0) {
         return 'null';
@@ -487,7 +487,7 @@ precipitation.App.prototype.getTimestep = function () {
  * Returns the selected Analysing Method
  * @returns {string}
  */
-precipitation.App.prototype.getStatistic = function () {
+myanmar.App.prototype.getStatistic = function () {
     var container = $('.statistics-container');
     if (container.length === 0) {
         return 'null';
@@ -504,7 +504,7 @@ precipitation.App.prototype.getStatistic = function () {
 /**
  * Returns target, JSON encoded for polygons, regular for country names
  */
-precipitation.App.prototype.getTarget = function () {
+myanmar.App.prototype.getTarget = function () {
     switch (this.selectionMethod) {
         case "country":
             return this.selectedCountry.getProperty('Country');
@@ -521,7 +521,7 @@ precipitation.App.prototype.getTarget = function () {
 /**
  * Validates the given shapefile link
  */
-precipitation.App.prototype.validateShapefile = function () {
+myanmar.App.prototype.validateShapefile = function () {
     var link = $('#shapefile-link').val();
     console.log('Validating: ' + link);
     $.ajax({
@@ -550,7 +550,7 @@ precipitation.App.prototype.validateShapefile = function () {
  * Exports the chart data to CSV cuz dataTableToCSV is fucking gone...
  * @returns {*|string}
  */
-precipitation.App.graphToCSV = function (dataTable) {
+myanmar.App.graphToCSV = function (dataTable) {
     var json = dataTable;
     var fields = Object.keys(json[0]);
     var replacer = function (key, value) {
@@ -565,27 +565,27 @@ precipitation.App.graphToCSV = function (dataTable) {
     return csv.join('\r\n');
 };
 
-precipitation.App.format = function (value) {
+myanmar.App.format = function (value) {
     return parseFloat(Math.round(value * 100.0) / 100.0).toFixed(2);
 };
 
-precipitation.App.EE_URL = 'https://earthengine.googleapis.com';
+myanmar.App.EE_URL = 'https://earthengine.googleapis.com';
 
-precipitation.App.SELECTED_STYLE = {strokeWeight: 4};
-precipitation.App.UNSELECTED_STYLE = {
+myanmar.App.SELECTED_STYLE = {strokeWeight: 4};
+myanmar.App.UNSELECTED_STYLE = {
     fillOpacity: 0.0,
     strokeColor: 'black',
     strokeWeight: 1
 };
 
-precipitation.App.OVERLAY_BASE_BUTTON_NAME = 'Create Overlay';
+myanmar.App.OVERLAY_BASE_BUTTON_NAME = 'Create Overlay';
 
-precipitation.App.GRAPH_BASE_BUTTON_NAME = 'Create Graph';
+myanmar.App.GRAPH_BASE_BUTTON_NAME = 'Create Graph';
 
-precipitation.App.DEFAULT_CENTER = {lng: 96.95112549402336, lat: 18.00746449851361};
-precipitation.App.DEFAULT_ZOOM = 6;
-precipitation.App.MAX_ZOOM = 14;
+myanmar.App.DEFAULT_CENTER = {lng: 96.95112549402336, lat: 18.00746449851361};
+myanmar.App.DEFAULT_ZOOM = 6;
+myanmar.App.MAX_ZOOM = 14;
 
-precipitation.App.CHIRPS_CLIMATE = 'UCSB-CHG/CHIRPS/DAILY';
-precipitation.App.TERA_EVAPOTRANSPIRATION = 'MODIS/006/MOD16A2';
+myanmar.App.CHIRPS_CLIMATE = 'UCSB-CHG/CHIRPS/DAILY';
+myanmar.App.TERA_EVAPOTRANSPIRATION = 'MODIS/006/MOD16A2';
 

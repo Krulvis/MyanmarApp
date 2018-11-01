@@ -4,7 +4,7 @@ timesteps.resetRadios = function (type) {
     var options = $('.create-options');
     this.removeFrom(options);
     if (type === 'graph') {
-        switch (precipitation.instance.selectionMethod) {
+        switch (myanmar.instance.selectionMethod) {
             case 'country':
                 this.addTo(type, options);
                 break;
@@ -15,7 +15,7 @@ timesteps.resetRadios = function (type) {
                 break;
         }
     } else if (type === 'overlay') {
-        switch (precipitation.instance.selectionMethod) {
+        switch (myanmar.instance.selectionMethod) {
             case 'country':
                 this.addTo(type, options);
                 break;
