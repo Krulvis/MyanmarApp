@@ -29,10 +29,10 @@ precipitation.App = function () {
     });
 
     //Get GeoJSON for all countries
-    $.getJSON('static/polygons/countries2.json', function (json) {
+    $.getJSON('static/polygons/myanmar_state_region_boundaries.json', function (json) {
         var names = [];
         json.features.forEach(function (feature) {
-            names.push(feature.properties.Country);
+            names.push(feature.properties.ST);
         });
         $("#selected-country").autocomplete({
             source: names,
@@ -120,7 +120,7 @@ precipitation.App.prototype.createMap = function () {
  * Loads the JSON as GeoJSON to the map's data, letting each country become a feature
  */
 precipitation.App.prototype.createCountries = function () {
-    this.map.data.loadGeoJson('static/polygons/countries2.json');
+    this.map.data.loadGeoJson('static/polygons/myanmar_state_region_boundaries.json');
     this.map.data.setStyle(function (feature) {
         return precipitation.App.UNSELECTED_STYLE;
     });
@@ -278,7 +278,7 @@ precipitation.App.prototype.handleMapClick = function (event) {
 
     else if (this.selectionMethod === 'country') {
         var feature = event.feature;
-        var name = feature.getProperty('Country');
+        var name = feature.getProperty('ST');
         console.log('Clicked: ' + name);
         this.selectedCountry = feature;
         this.map.data.revertStyle();
@@ -566,7 +566,7 @@ precipitation.App.graphToCSV = function (dataTable) {
 };
 
 precipitation.App.format = function (value) {
-    return parseFloat(Math.round(value * 100) / 100).toFixed(2);
+    return parseFloat(Math.round(value * 100.0) / 100.0).toFixed(2);
 };
 
 precipitation.App.EE_URL = 'https://earthengine.googleapis.com';
