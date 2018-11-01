@@ -37,6 +37,7 @@
 
     <!-- Our custom JavaScript for Earth Engine App. -->
     <script src="/static/scripts/markers.js"></script>
+    <script src="/static/scripts/regions.js"></script>
     <script src="/static/scripts/products.js"></script>
     <script src="/static/scripts/statistics.js"></script>
     <script src="/static/scripts/timesteps.js"></script>
@@ -117,8 +118,24 @@
                     <div id="country" class="tab-pane fade in active show">
 
                     </div>
-                    <div id="region" class="tab-pane fade in active show">
-
+                    <div id="region" class="tab-pane fade in active">
+                        <div class="form-group row">
+                            <div class="col-md-12">
+                                <input type="text" class="form-control" id="region-field" placeholder="Region name">
+                            </div>
+                        </div>
+                        <div class="form-group regions-table table-responsive table-sm">
+                            <table class="table table-striped">
+                                <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Remove</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                     <!-- ShapeFile Options -->
                     <div id="shapefile" class="tab-pane fade">
@@ -132,7 +149,6 @@
                             <div class="col-md-8">
                                 <input type="text" class="form-control" id="shapefile-link"
                                        placeholder="Shapefile link: users/****/****">
-
                             </div>
                             <div class="col-md-4">
                                 <button class="btn btn-success check-shapefile" onclick="return false;">

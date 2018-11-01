@@ -1,9 +1,9 @@
 regions = {};
 
 $(function () {
-    $('.markers-table').on('click', '.remove-marker', function () {
+    $('.regions-table').on('click', '.remove-marker', function () {
         var tr = $(this).closest('tr');
-        var title = tr.find('.title').html();
+        var title = tr.find('.name').html();
         console.log('Removing Marker: ' + title);
         var markers = [];
         myanmar.instance.regions.forEach(function (marker) {
@@ -75,7 +75,7 @@ regions.addMarker = function (lat, lng, title) {
     });
     myanmar.instance.regions.push(marker);
     console.log('Added marker: ' + marker.getTitle());
-    var tableContent = '<tr><td>' + lat + '</td><td>' + lng + '</td><td class="title">' + title + '</td><td><button class="btn btn-danger remove-marker">Remove</button></td></tr>';
+    var tableContent = '<tr><td>' + lat + '</td><td><button class="btn btn-danger remove-region">Remove</button></td></tr>';
     $('.markers-table tbody').append(tableContent);
 };
 

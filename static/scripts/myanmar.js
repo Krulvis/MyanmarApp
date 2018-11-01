@@ -29,19 +29,24 @@ myanmar.App = function () {
     });
 
     //Get GeoJSON for all countries
+    var names = [];
     $.getJSON('static/polygons/myanmar_state_region_boundaries.json', function (json) {
-        var names = [];
         json.features.forEach(function (feature) {
             names.push(feature.properties.ST);
         });
-        $("#selected-country").autocomplete({
-            source: names,
-            select: myanmar.instance.handleCountryUIClick
+    });
+    $.getJSON('static/polygons/myanmar_district_boundaries.json', function (json) {
+        json.features.forEach(function (feature) {
+            names.push(feature.properties.ST);
         });
+    });
+    $("#region-field").autocomplete({
+        source: names,
+        select: myanmar.instance.handleRegionUIClick
     });
 
     //this.addCountries(countriesMapId, countriesToken);
-    this.createCountries();
+    this.createRegions();
     this.map.data.addListener('click', this.handleMapClick.bind(this));
 
     // Register a click handler to hide the panel when the user clicks close.
@@ -52,7 +57,7 @@ myanmar.App = function () {
     $('.create-buttons .nav-item').on('click', this.switchOutput.bind(this));
 
     //Adds a marker for given input
-    $('.add-marker').on('click', markers.addMarkerFromForm.bind(this));
+    $('.add-marker').on('click', regions.addMarkerFromForm.bind(this));
 
     //Validates the shape file link
     $('.check-shapefile').on('click', this.validateShapefile.bind(this));
@@ -116,11 +121,22 @@ myanmar.App.prototype.createMap = function () {
 
 
 /**
- * Retrieves the JSON data for each country
- * Loads the JSON as GeoJSON to the map's data, letting each country become a feature
+ * Retrieves the JSON data for each Region
+ * Loads the JSON as GeoJSON to the map's data, letting each Region become a feature
  */
-myanmar.App.prototype.createCountries = function () {
+myanmar.App.prototype.createRegions = function () {
     this.map.data.loadGeoJson('static/polygons/myanmar_state_region_boundaries.json');
+    this.map.data.setStyle(function (feature) {
+        return myanmar.App.UNSELECTED_STYLE;
+    });
+};
+
+/**
+ * Retrieves the JSON data for each District
+ * Loads the JSON as GeoJSON to the map's data, letting each District become a feature
+ */
+myanmar.App.prototype.createDistricts = function () {
+    this.map.data.loadGeoJson('static/polygons/myanmar_districts_boundaries.json');
     this.map.data.setStyle(function (feature) {
         return myanmar.App.UNSELECTED_STYLE;
     });
@@ -236,7 +252,7 @@ myanmar.App.prototype.checkSelections = function (product, statistic, timestep) 
             }
             break;
         case 'coordinate':
-            if (this.markers.length === 0) {
+            if (this.regions.length === 0) {
                 error.show().html('Create a Marker first (or click on map)!');
                 return false;
             }
@@ -273,7 +289,7 @@ myanmar.App.prototype.checkSelections = function (product, statistic, timestep) 
  */
 myanmar.App.prototype.handleMapClick = function (event) {
     if (this.selectionMethod === 'coordinate') {
-        markers.addMarkerFromClick(event);
+        regions.addMarkerFromClick(event);
     }
 
     else if (this.selectionMethod === 'country') {
@@ -292,7 +308,7 @@ myanmar.App.prototype.handleMapClick = function (event) {
  * @param event
  * @param ui
  */
-myanmar.App.prototype.handleCountryUIClick = function (event, ui) {
+myanmar.App.prototype.handleRegionUIClick = function (event, ui) {
     var countryName = ui.item.label;
     console.log('Clicked: ' + countryName);
     myanmar.instance.map.data.forEach(function (feature) {
@@ -409,12 +425,13 @@ myanmar.App.prototype.switchStyle = function (event) {
             overlayTab.addClass('disabled');
             graphTab.tab('show');//Force going to graph
             this.map.data.revertStyle();
-            markers.draw(true);
+            regions.draw(true);
             break;
         case 'country':
             overlayTab.removeClass('disabled');
             this.map.data.revertStyle();
-            markers.draw(false);
+            regions.draw(false);
+            //TODO MARK WHOLE COUNTRY
             if (this.selectedCountry != null) {
                 this.map.data.overrideStyle(this.selectedCountry, myanmar.App.SELECTED_STYLE);
             }
@@ -422,7 +439,7 @@ myanmar.App.prototype.switchStyle = function (event) {
         case 'shapefile':
             overlayTab.removeClass('disabled');
             this.map.data.revertStyle();
-            markers.draw(false);
+            regions.draw(false);
             break;
     }
     timesteps.resetRadios(this.selectionType);
@@ -511,7 +528,7 @@ myanmar.App.prototype.getTarget = function () {
         case 'shapefile':
             return $('#shapefile-link').val();
         case 'coordinate':
-            return markers.getJSON();
+            return regions.getJSON();
         default:
             $('#error-message').show().html('Please select a method of targeting first!');
             return 'null';
@@ -572,10 +589,17 @@ myanmar.App.format = function (value) {
 myanmar.App.EE_URL = 'https://earthengine.googleapis.com';
 
 myanmar.App.SELECTED_STYLE = {strokeWeight: 4};
+
 myanmar.App.UNSELECTED_STYLE = {
     fillOpacity: 0.0,
     strokeColor: 'black',
     strokeWeight: 1
+};
+
+myanmar.App.INACTIVE_STYLE = {
+    fillOpacity: 0.0,
+    strokeColor: 'black',
+    strokeWeight: 0
 };
 
 myanmar.App.OVERLAY_BASE_BUTTON_NAME = 'Create Overlay';
