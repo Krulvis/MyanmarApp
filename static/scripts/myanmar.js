@@ -288,24 +288,6 @@ myanmar.App.prototype.handleMapClick = function (event) {
 };
 
 /**
- * Handles click on UI, marks and sets clicked country name
- * @param event
- * @param ui
- */
-myanmar.App.prototype.handleRegionUIClick = function (event, ui) {
-    var countryName = ui.item.label;
-    console.log('Clicked: ' + countryName);
-    myanmar.instance.map.data.forEach(function (feature) {
-        if (feature.getProperty('Country') === countryName) {
-            myanmar.instance.map.data.revertStyle();
-            myanmar.instance.selectedCountry = feature;
-            myanmar.instance.map.data.overrideStyle(myanmar.instance.selectedCountry, myanmar.App.SELECTED_STYLE);
-            return;
-        }
-    })
-};
-
-/**
  * Shows a chart with the given timeseries.
  * @param {Array<Array<number>>} timeseries The timeseries data
  *     to plot in the chart.

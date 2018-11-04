@@ -16,25 +16,35 @@ $(function () {
     });
     $("#region-field").autocomplete({
         source: names,
-        select: myanmar.instance.handleRegionUIClick
+        select: area.handleRegionUIClick
     });
 
-    $('.area-table').on('click', '.basins-region', function () {
+    $('.area-table').on('click', '.remove-area', function () {
         var tr = $(this).closest('tr');
-        var title = tr.find('.name').html();
-        console.log('Removing Marker: ' + title);
+        var title = tr.find('.area-name').html();
+        console.log('Removing Area: ' + title);
 
-        myanmar.instance.area.forEach(function (marker) {
-            if (marker.getTitle() !== title) {
-                area.push(marker);
-                console.log("Removed at: " + marker.index);
-            } else {
-                marker.setMap(null);
-            }
-        });
         tr.remove();
     });
 });
+
+/**
+ * Handles click on UI, marks and sets clicked country name
+ * @param event
+ * @param ui
+ */
+area.handleRegionUIClick = function (event, ui) {
+    var countryName = ui.item.label;
+    console.log('Clicked: ' + countryName);
+    myanmar.instance.map.data.forEach(function (feature) {
+        if (feature.getProperty('Country') === countryName) {
+            myanmar.instance.map.data.revertStyle();
+            myanmar.instance.selectedCountry = feature;
+            myanmar.instance.map.data.overrideStyle(myanmar.instance.selectedCountry, myanmar.App.SELECTED_STYLE);
+            return;
+        }
+    })
+};
 
 /**
  * Enable or disable drawing the markers, used when switching styles
@@ -84,7 +94,7 @@ area.addMarkerFromForm = function () {
  */
 area.addRegion = function (feature, title) {
     console.log('Added region: ' + title);
-    var tableContent = '<tr><td>' + title + '</td><td><button class="btn btn-danger remove-area">Remove</button></td></tr>';
+    var tableContent = '<tr><td class="area-name">' + title + '</td><td><button class="btn btn-danger remove-area">Remove</button></td></tr>';
     $('.area-table tbody').append(tableContent);
 };
 
