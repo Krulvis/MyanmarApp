@@ -1,4 +1,4 @@
-marker = {};
+markers = {};
 
 $(function () {
     $('.markers-table').on('click', '.remove-marker', function () {
@@ -7,11 +7,11 @@ $(function () {
         console.log('Removing Marker: ' + title);
         var markers = [];
         myanmar.instance.markers.forEach(function (marker) {
-            if (marker.getTitle() !== title) {
-                markers.push(marker);
-                console.log("Removed at: " + marker.index);
+            if (markers.getTitle() !== title) {
+                markers.push(markers);
+                console.log("Removed at: " + markers.index);
             } else {
-                marker.setMap(null);
+                markers.setMap(null);
             }
         });
         myanmar.instance.markers = markers;
@@ -24,14 +24,14 @@ $(function () {
  * @param event
  * @returns {*[]}
  */
-marker.addRegion = function (event) {
+markers.addRegion = function (event) {
     let feature = event.feature;
 };
 
 /**
  * Adds a marker for filled in values
  */
-marker.addMarkerFromForm = function () {
+markers.addMarkerFromForm = function () {
     const lat = $('#lat').val();
     const lng = $('#lng').val();
     const title = $('#title').val();
@@ -46,7 +46,7 @@ marker.addMarkerFromForm = function () {
 /**
  * Add marker to map and
  */
-marker.addMarker = function (lat, lng, title) {
+markers.addMarker = function (lat, lng, title) {
     //nameing
     var position = new google.maps.LatLng(lat, lng);
     var marker = new google.maps.Marker({
@@ -54,8 +54,8 @@ marker.addMarker = function (lat, lng, title) {
         map: myanmar.instance.map,
         title: title
     });
-    myanmar.instance.markers.push(marker);
-    console.log('Added marker: ' + marker.getTitle());
+    myanmar.instance.markers.push(markers);
+    console.log('Added marker: ' + markers.getTitle());
     var tableContent = '<tr><td>' + lat + '</td><td>' + lng + '</td><td class="title">' + title + '</td><td><button class="btn btn-danger remove-marker">Remove</button></td></tr>';
     $('.markers-table tbody').append(tableContent);
 };
@@ -63,7 +63,7 @@ marker.addMarker = function (lat, lng, title) {
 /**
  * Returns JSON of all markers for EE
  */
-marker.getJSON = function () {
+markers.getJSON = function () {
     var features = $.map(myanmar.instance.markers, function (marker) {
         var temp = {
             "type": "Feature",
@@ -76,8 +76,8 @@ marker.getJSON = function () {
                 "coordinates": []
             }
         };
-        temp.properties.title = marker.getTitle();
-        var position = marker.getPosition();
+        temp.properties.title = markers.getTitle();
+        var position = markers.getPosition();
         temp.geometry.coordinates = [position.lat(), position.lng()];
         return temp;
     });
@@ -86,7 +86,7 @@ marker.getJSON = function () {
     return json;
 };
 
-marker.chartData = [
+markers.chartData = [
     [
         "Month",
         "1",

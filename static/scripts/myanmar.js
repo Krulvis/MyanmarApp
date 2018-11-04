@@ -40,7 +40,7 @@ myanmar.App = function () {
     $('.create-buttons .nav-item').on('click', this.switchOutput.bind(this));
 
     //Adds a marker for given input
-    $('.add-marker').on('click', area.addMarkerFromForm.bind(this));
+    $('.add-marker').on('click', markers.addMarkerFromForm.bind(this));
 
     //Validates the shape file link
     $('.check-shapefile').on('click', this.validateShapefile.bind(this));
@@ -70,7 +70,7 @@ myanmar.App = function () {
  */
 myanmar.App.prototype.initVals = function () {
     this.markers = [];
-    this.selectionMethod = 'country';
+    this.selectionMethod = 'area';
     this.selectionType = 'graph';
     this.chartData = null;
     this.chartTitle = 'Chart';
@@ -273,17 +273,12 @@ myanmar.App.prototype.checkSelections = function (product, statistic, timestep) 
  * @param event
  */
 myanmar.App.prototype.handleMapClick = function (event) {
-    if (this.selectionMethod === 'coordinate') {
-        area.addRegion(event);
-    }
-    else if (this.selectionMethod === 'country') {
+
+    if (this.selectionMethod === 'area') {
         var feature = event.feature;
         var name = feature.getProperty('ST');
-        console.log('Clicked: ' + name);
-        this.selectedCountry = feature;
-        this.map.data.revertStyle();
-        this.map.data.overrideStyle(feature, myanmar.App.SELECTED_STYLE);
-        $('#selected-country').val(name);
+        console.log('Clicked area: ' + name);
+        area.add(feature, name);
     }
 };
 
