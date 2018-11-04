@@ -11,12 +11,12 @@ myanmar.boot = function (key) {
             myanmar.instance = new myanmar.App();
             myanmar.instance.initVals();
         });
-
     });
 };
 
 myanmar.App = function () {
     this.map = this.createMap();
+
 
     //Some styling (responsiveness of results panel)
     var results = $('.results');
@@ -86,8 +86,6 @@ myanmar.App = function () {
  * Set the initial Values to use
  */
 myanmar.App.prototype.initVals = function () {
-    this.targetRegion = null;
-    this.selectedCountry = null;
     this.markers = [];
     this.selectionMethod = 'country';
     this.selectionType = 'graph';
@@ -111,9 +109,13 @@ myanmar.App.prototype.createMap = function () {
         //disableDefaultUI: true,
         streetViewControl: false,
         mapTypeControl: true,
-        mapTypeControlOptions: {position: google.maps.ControlPosition.RIGHT_BOTTOM},
+        mapTypeControlOptions: {
+            position: google.maps.ControlPosition.RIGHT_BOTTOM,
+            mapTypeIds: ['roadmap', 'satellite', 'terrain', 'hybrid']
+        },
         zoom: myanmar.App.DEFAULT_ZOOM,
-        maxZoom: myanmar.App.MAX_ZOOM
+        maxZoom: myanmar.App.MAX_ZOOM,
+        mapTypeId: 'terrain'
     };
     var mapEl = $('.map').get(0);
     return new google.maps.Map(mapEl, mapOptions);
@@ -211,7 +213,7 @@ myanmar.App.prototype.getGraph = function () {
     }
     $.ajax({
         url: '/graph?startDate=' + startDate + '&endDate=' + endDate + '&method=' + this.selectionMethod
-        + '&product=' + product + '&statistic=' + statistic + '&target=' + this.getTarget() + '&timestep=' + timestep,
+            + '&product=' + product + '&statistic=' + statistic + '&target=' + this.getTarget() + '&timestep=' + timestep,
         method: 'GET',
         beforeSend: function () {
             downloadCSV.hide();
@@ -289,9 +291,8 @@ myanmar.App.prototype.checkSelections = function (product, statistic, timestep) 
  */
 myanmar.App.prototype.handleMapClick = function (event) {
     if (this.selectionMethod === 'coordinate') {
-        regions.addMarkerFromClick(event);
+        regions.addRegion(event);
     }
-
     else if (this.selectionMethod === 'country') {
         var feature = event.feature;
         var name = feature.getProperty('ST');

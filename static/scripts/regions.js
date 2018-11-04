@@ -41,7 +41,7 @@ regions.draw = function (draw) {
  * @param event
  * @returns {*[]}
  */
-regions.addMarkerFromClick = function (event) {
+regions.addRegion = function (event) {
     var lat = event.latLng.lat();
     var lng = event.latLng.lng();
     regions.addMarker(lat, lng, '[' + lat + ', ' + lng + ']');

@@ -1,59 +1,22 @@
 regions = {};
 
-$(function () {
-    $('.markers-table').on('click', '.remove-marker', function () {
-        var tr = $(this).closest('tr');
-        var title = tr.find('.title').html();
-        console.log('Removing Marker: ' + title);
-        var markers = [];
-        myanmar.instance.regions.forEach(function (marker) {
-            if (marker.getTitle() !== title) {
-                regions.push(marker);
-                console.log("Removed at: " + marker.index);
-            } else {
-                marker.setMap(null);
-            }
-        });
-        myanmar.instance.markers = regions;
-        tr.remove();
-    });
-});
-
-/**
- * Enable or disable drawing the markers, used when switching styles
- * @param draw
- */
-regions.draw = function (draw) {
-    if (draw) {
-        var map = myanmar.instance.map;
-        myanmar.instance.regions.forEach(function (marker) {
-            marker.setMap(map);
-        });
-    } else {
-        myanmar.instance.regions.forEach(function (marker) {
-            marker.setMap(null);
-        });
-    }
-};
 
 /**
  * Gets latLng from click
  * @param event
  * @returns {*[]}
  */
-regions.addMarkerFromClick = function (event) {
-    var lat = event.latLng.lat();
-    var lng = event.latLng.lng();
-    regions.addMarker(lat, lng, '[' + lat + ', ' + lng + ']');
+regions.addRegion = function (event) {
+    let feature = event.feature;
 };
 
 /**
  * Adds a marker for filled in values
  */
 regions.addMarkerFromForm = function () {
-    var lat = $('#lat').val();
-    var lng = $('#lng').val();
-    var title = $('#title').val();
+    const lat = $('#lat').val();
+    const lng = $('#lng').val();
+    const title = $('#title').val();
     if (lat === '' || lng === '' || title === '') {
         $('#error-message').show().html('Please enter a valid Latitude, Longitude and Title');
     } else {

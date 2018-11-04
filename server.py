@@ -464,7 +464,7 @@ def Multiply(i, value):
     return i.multiply(value).copyProperties(i, ['system:time_start'])
 
 
-TRMM = ee.ImageCollection('TRMM/3B42').select('precipitation').map(
+TRMM = ee.ImageCollection('TRMM/3B42').select('myanmar').map(
     lambda i: Multiply(i, 3))
 MOD16 = ee.ImageCollection('MODIS/006/MOD16A2').select('ET').map(
     lambda i: Multiply(i, 0.1))
