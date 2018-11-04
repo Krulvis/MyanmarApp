@@ -1,20 +1,37 @@
-regions = {};
+area = {};
 
 $(function () {
-    $('.regions-table').on('click', '.remove-marker', function () {
+
+    //Get GeoJSON for all countries
+    let names = [];
+    $.getJSON('static/polygons/myanmar_state_region_boundaries.json', function (json) {
+        json.features.forEach(function (feature) {
+            names.push(feature.properties.ST);
+        });
+    });
+    $.getJSON('static/polygons/myanmar_district_boundaries.json', function (json) {
+        json.features.forEach(function (feature) {
+            names.push(feature.properties.ST);
+        });
+    });
+    $("#region-field").autocomplete({
+        source: names,
+        select: myanmar.instance.handleRegionUIClick
+    });
+
+    $('.remove-area').on('click', '.basins-region', function () {
         var tr = $(this).closest('tr');
         var title = tr.find('.name').html();
         console.log('Removing Marker: ' + title);
-        var markers = [];
-        myanmar.instance.regions.forEach(function (marker) {
+
+        myanmar.instance.area.forEach(function (marker) {
             if (marker.getTitle() !== title) {
-                regions.push(marker);
+                area.push(marker);
                 console.log("Removed at: " + marker.index);
             } else {
                 marker.setMap(null);
             }
         });
-        myanmar.instance.markers = regions;
         tr.remove();
     });
 });
@@ -23,14 +40,14 @@ $(function () {
  * Enable or disable drawing the markers, used when switching styles
  * @param draw
  */
-regions.draw = function (draw) {
+area.draw = function (draw) {
     if (draw) {
         var map = myanmar.instance.map;
-        myanmar.instance.regions.forEach(function (marker) {
+        myanmar.instance.area.forEach(function (marker) {
             marker.setMap(map);
         });
     } else {
-        myanmar.instance.regions.forEach(function (marker) {
+        myanmar.instance.area.forEach(function (marker) {
             marker.setMap(null);
         });
     }
@@ -41,16 +58,16 @@ regions.draw = function (draw) {
  * @param event
  * @returns {*[]}
  */
-regions.addRegion = function (event) {
+area.addRegion = function (event) {
     var lat = event.latLng.lat();
     var lng = event.latLng.lng();
-    regions.addMarker(lat, lng, '[' + lat + ', ' + lng + ']');
+    area.addMarker(lat, lng, '[' + lat + ', ' + lng + ']');
 };
 
 /**
  * Adds a marker for filled in values
  */
-regions.addMarkerFromForm = function () {
+area.addMarkerFromForm = function () {
     var lat = $('#lat').val();
     var lng = $('#lng').val();
     var title = $('#title').val();
@@ -58,32 +75,24 @@ regions.addMarkerFromForm = function () {
         $('#error-message').show().html('Please enter a valid Latitude, Longitude and Title');
     } else {
         $('#error-message').hide();
-        regions.addMarker(lat, lng, title);
+        area.addMarker(lat, lng, title);
     }
 };
 
 /**
  * Add marker to map and
  */
-regions.addMarker = function (lat, lng, title) {
-    //nameing
-    var position = new google.maps.LatLng(lat, lng);
-    var marker = new google.maps.Marker({
-        position: position,
-        map: myanmar.instance.map,
-        title: title
-    });
-    myanmar.instance.regions.push(marker);
-    console.log('Added marker: ' + marker.getTitle());
-    var tableContent = '<tr><td>' + lat + '</td><td><button class="btn btn-danger remove-region">Remove</button></td></tr>';
-    $('.markers-table tbody').append(tableContent);
+area.addRegion = function (feature, title) {
+    console.log('Added region: ' + title);
+    var tableContent = '<tr><td>' + title + '</td><td><button class="btn btn-danger remove-area">Remove</button></td></tr>';
+    $('.area-table tbody').append(tableContent);
 };
 
 /**
  * Returns JSON of all markers for EE
  */
-regions.getJSON = function () {
-    var features = $.map(myanmar.instance.regions, function (marker) {
+area.getJSON = function () {
+    var features = $.map(myanmar.instance.area, function (marker) {
         var temp = {
             "type": "Feature",
             "properties": {
@@ -105,7 +114,7 @@ regions.getJSON = function () {
     return json;
 };
 
-regions.chartData = [
+area.chartData = [
     [
         "Month",
         "1",

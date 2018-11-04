@@ -28,25 +28,8 @@ myanmar.App = function () {
         myanmar.instance.showChart();
     });
 
-    //Get GeoJSON for all countries
-    var names = [];
-    $.getJSON('static/polygons/myanmar_state_region_boundaries.json', function (json) {
-        json.features.forEach(function (feature) {
-            names.push(feature.properties.ST);
-        });
-    });
-    $.getJSON('static/polygons/myanmar_district_boundaries.json', function (json) {
-        json.features.forEach(function (feature) {
-            names.push(feature.properties.ST);
-        });
-    });
-    $("#region-field").autocomplete({
-        source: names,
-        select: myanmar.instance.handleRegionUIClick
-    });
-
     //this.addCountries(countriesMapId, countriesToken);
-    this.createRegions();
+    this.createProvinces();
     this.map.data.addListener('click', this.handleMapClick.bind(this));
 
     // Register a click handler to hide the panel when the user clicks close.
@@ -57,7 +40,7 @@ myanmar.App = function () {
     $('.create-buttons .nav-item').on('click', this.switchOutput.bind(this));
 
     //Adds a marker for given input
-    $('.add-marker').on('click', regions.addMarkerFromForm.bind(this));
+    $('.add-marker').on('click', area.addMarkerFromForm.bind(this));
 
     //Validates the shape file link
     $('.check-shapefile').on('click', this.validateShapefile.bind(this));
@@ -126,7 +109,7 @@ myanmar.App.prototype.createMap = function () {
  * Retrieves the JSON data for each Region
  * Loads the JSON as GeoJSON to the map's data, letting each Region become a feature
  */
-myanmar.App.prototype.createRegions = function () {
+myanmar.App.prototype.createProvinces = function () {
     this.map.data.loadGeoJson('static/polygons/myanmar_state_region_boundaries.json');
     this.map.data.setStyle(function (feature) {
         return myanmar.App.UNSELECTED_STYLE;
@@ -254,7 +237,7 @@ myanmar.App.prototype.checkSelections = function (product, statistic, timestep) 
             }
             break;
         case 'coordinate':
-            if (this.regions.length === 0) {
+            if (this.area.length === 0) {
                 error.show().html('Create a Marker first (or click on map)!');
                 return false;
             }
@@ -291,7 +274,7 @@ myanmar.App.prototype.checkSelections = function (product, statistic, timestep) 
  */
 myanmar.App.prototype.handleMapClick = function (event) {
     if (this.selectionMethod === 'coordinate') {
-        regions.addRegion(event);
+        area.addRegion(event);
     }
     else if (this.selectionMethod === 'country') {
         var feature = event.feature;
@@ -426,12 +409,12 @@ myanmar.App.prototype.switchStyle = function (event) {
             overlayTab.addClass('disabled');
             graphTab.tab('show');//Force going to graph
             this.map.data.revertStyle();
-            regions.draw(true);
+            area.draw(true);
             break;
         case 'country':
             overlayTab.removeClass('disabled');
             this.map.data.revertStyle();
-            regions.draw(false);
+            area.draw(false);
             //TODO MARK WHOLE COUNTRY
             if (this.selectedCountry != null) {
                 this.map.data.overrideStyle(this.selectedCountry, myanmar.App.SELECTED_STYLE);
@@ -440,7 +423,7 @@ myanmar.App.prototype.switchStyle = function (event) {
         case 'shapefile':
             overlayTab.removeClass('disabled');
             this.map.data.revertStyle();
-            regions.draw(false);
+            area.draw(false);
             break;
     }
     timesteps.resetRadios(this.selectionType);
@@ -529,7 +512,7 @@ myanmar.App.prototype.getTarget = function () {
         case 'shapefile':
             return $('#shapefile-link').val();
         case 'coordinate':
-            return regions.getJSON();
+            return area.getJSON();
         default:
             $('#error-message').show().html('Please select a method of targeting first!');
             return 'null';

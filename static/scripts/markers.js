@@ -1,4 +1,4 @@
-regions = {};
+marker = {};
 
 
 /**
@@ -6,14 +6,14 @@ regions = {};
  * @param event
  * @returns {*[]}
  */
-regions.addRegion = function (event) {
+marker.addRegion = function (event) {
     let feature = event.feature;
 };
 
 /**
  * Adds a marker for filled in values
  */
-regions.addMarkerFromForm = function () {
+marker.addMarkerFromForm = function () {
     const lat = $('#lat').val();
     const lng = $('#lng').val();
     const title = $('#title').val();
@@ -21,14 +21,14 @@ regions.addMarkerFromForm = function () {
         $('#error-message').show().html('Please enter a valid Latitude, Longitude and Title');
     } else {
         $('#error-message').hide();
-        regions.addMarker(lat, lng, title);
+        area.addMarker(lat, lng, title);
     }
 };
 
 /**
  * Add marker to map and
  */
-regions.addMarker = function (lat, lng, title) {
+marker.addMarker = function (lat, lng, title) {
     //nameing
     var position = new google.maps.LatLng(lat, lng);
     var marker = new google.maps.Marker({
@@ -36,7 +36,7 @@ regions.addMarker = function (lat, lng, title) {
         map: myanmar.instance.map,
         title: title
     });
-    myanmar.instance.regions.push(marker);
+    myanmar.instance.markers.push(marker);
     console.log('Added marker: ' + marker.getTitle());
     var tableContent = '<tr><td>' + lat + '</td><td>' + lng + '</td><td class="title">' + title + '</td><td><button class="btn btn-danger remove-marker">Remove</button></td></tr>';
     $('.markers-table tbody').append(tableContent);
@@ -45,8 +45,8 @@ regions.addMarker = function (lat, lng, title) {
 /**
  * Returns JSON of all markers for EE
  */
-regions.getJSON = function () {
-    var features = $.map(myanmar.instance.regions, function (marker) {
+marker.getJSON = function () {
+    var features = $.map(myanmar.instance.markers, function (marker) {
         var temp = {
             "type": "Feature",
             "properties": {
@@ -68,7 +68,7 @@ regions.getJSON = function () {
     return json;
 };
 
-regions.chartData = [
+marker.chartData = [
     [
         "Month",
         "1",

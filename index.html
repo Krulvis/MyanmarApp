@@ -37,7 +37,7 @@
 
     <!-- Our custom JavaScript for Earth Engine App. -->
     <script src="/static/scripts/markers.js"></script>
-    <script src="/static/scripts/regions.js"></script>
+    <script src="/static/scripts/area.js"></script>
     <script src="/static/scripts/products.js"></script>
     <script src="/static/scripts/statistics.js"></script>
     <script src="/static/scripts/timesteps.js"></script>
@@ -103,10 +103,8 @@
             <!-- STYLE SELECTION -->
             <div class="method-container">
                 <ul class="nav nav-tabs nav-justified">
-                    <li class="nav-item"><a class="nav-link active show" data-toggle="tab" href="#province"><i
-                            class="fas fa-globe-americas fa-lg fa-pull-left"></i>Province</a></li>
-                    <li class="nav-item"><a class="nav-link" data-toggle="tab" href="#basin"><i
-                            class="fas fa-file fa-lg fa-pull-left"></i>Basin</a></li>
+                    <li class="nav-item"><a class="nav-link active show" data-toggle="tab" href="#area"><i
+                            class="fas fa-globe-americas fa-lg fa-pull-left"></i>Area</a></li>
                     <li class="nav-item"><a class="nav-link" data-toggle="tab" href="#shapefile"><i
                             class="fas fa-file fa-lg fa-pull-left"></i>Shapefile</a></li>
                     <li class="nav-item"><a class="nav-link" data-toggle="tab" href="#coordinate"><i
@@ -114,14 +112,25 @@
                     </li>
                 </ul>
                 <div class="method-content tab-content">
-                    <!-- Country Options -->
-                    <div id="province" class="tab-pane fade in active show">
 
-                    </div>
-                    <div id="basin" class="tab-pane fade in active">
+                    <!-- Region Options -->
+                    <div id="area" class="tab-pane fade in active show">
+                        <div class="form-group row regions-selection">
+                            <label class="radio-inline">Regions:</label>
+                            <label class="radio-inline">
+                                <input id="country" name="area-selection" value="country" type="radio">
+                                Myanmar(Country)</label>
+                            <label class="radio-inline">
+                                <input id="regions" name="area-selection" value="regions" type="radio">
+                                Region</label>
+                            <label class="radio-inline">
+                                <input id="basins" name="area-selection" value="basins" type="radio">
+                                Basins</label>
+                        </div>
                         <div class="form-group row">
                             <div class="col-md-12">
-                                <input type="text" class="form-control" id="region-field" placeholder="Region name">
+                                <input type="text" class="form-control" id="region-field"
+                                       placeholder="Search for area...">
                             </div>
                         </div>
                         <div class="form-group regions-table table-responsive table-sm">
@@ -133,6 +142,12 @@
                                 </tr>
                                 </thead>
                                 <tbody>
+                                <tr>
+                                    <td>ExampleArea</td>
+                                    <td>
+                                        <button class="btn btn-danger remove-area">Remove Area</button>
+                                    </td>
+                                </tr>
                                 </tbody>
                             </table>
                         </div>
