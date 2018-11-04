@@ -1,5 +1,23 @@
 marker = {};
 
+$(function () {
+    $('.markers-table').on('click', '.remove-marker', function () {
+        var tr = $(this).closest('tr');
+        var title = tr.find('.title').html();
+        console.log('Removing Marker: ' + title);
+        var markers = [];
+        myanmar.instance.markers.forEach(function (marker) {
+            if (marker.getTitle() !== title) {
+                markers.push(marker);
+                console.log("Removed at: " + marker.index);
+            } else {
+                marker.setMap(null);
+            }
+        });
+        myanmar.instance.markers = markers;
+        tr.remove();
+    });
+});
 
 /**
  * Gets latLng from click
