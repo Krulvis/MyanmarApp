@@ -19,7 +19,7 @@ $(function () {
         select: myanmar.instance.handleRegionUIClick
     });
 
-    $('.remove-area').on('click', '.basins-region', function () {
+    $('.area-table').on('click', '.basins-region', function () {
         var tr = $(this).closest('tr');
         var title = tr.find('.name').html();
         console.log('Removing Marker: ' + title);
