@@ -5,7 +5,7 @@ timesteps.reset = function (type) {
     this.removeFrom(options);
     if (type === 'graph') {
         switch (myanmar.instance.selectionMethod) {
-            case 'country':
+            case 'area':
                 this.addTo(type, options);
                 break;
             case 'shapefile':

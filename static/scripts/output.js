@@ -2,10 +2,47 @@ output = {};
 
 $(function () {
 
+
     output.type = 'graph';
 
     $('.create-buttons .nav-item').on('click', output.switchOutput.bind(this));
+
 });
+
+/**
+ * Click listener for when Selection Radio-buttons are clicked
+ * @param event
+ */
+output.switchStyle = function () {
+
+    var overlayTab = $('#overlay-tab');
+    var graphTab = $('#graph-tab');
+    /*
+    Change settings
+     */
+    switch (this.selectionMethod) {
+        case 'coordinate':
+            overlayTab.addClass('disabled');
+            graphTab.tab('show');//Force going to graph
+            this.map.data.revertStyle();
+            area.draw(true);
+            break;
+        case 'area':
+            overlayTab.removeClass('disabled');
+            this.map.data.revertStyle();
+            area.draw(false);
+            //TODO MARK WHOLE COUNTRY
+            if (this.selectedCountry != null) {
+                this.map.data.overrideStyle(this.selectedCountry, myanmar.App.SELECTED_STYLE);
+            }
+            break;
+        case 'shapefile':
+            overlayTab.removeClass('disabled');
+            this.map.data.revertStyle();
+            break;
+    }
+    output.reset();
+};
 
 /**
  * Changes the option menu depending on which type= [overlay/graph] is clicked

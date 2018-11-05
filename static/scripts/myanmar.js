@@ -351,36 +351,9 @@ myanmar.App.prototype.switchStyle = function (event) {
     $('#overlay-button').html(myanmar.App.OVERLAY_BASE_BUTTON_NAME);
     $('#graph-button').html(myanmar.App.GRAPH_BASE_BUTTON_NAME);
 
-    var overlayTab = $('#overlay-tab');
-    var graphTab = $('#graph-tab');
-    /*
-    Change settings
-     */
-    switch (this.selectionMethod) {
-        case 'coordinate':
-            overlayTab.addClass('disabled');
-            graphTab.tab('show');//Force going to graph
-            this.map.data.revertStyle();
-            area.draw(true);
-            break;
-        case 'country':
-            overlayTab.removeClass('disabled');
-            this.map.data.revertStyle();
-            area.draw(false);
-            //TODO MARK WHOLE COUNTRY
-            if (this.selectedCountry != null) {
-                this.map.data.overrideStyle(this.selectedCountry, myanmar.App.SELECTED_STYLE);
-            }
-            break;
-        case 'shapefile':
-            overlayTab.removeClass('disabled');
-            this.map.data.revertStyle();
-            area.draw(false);
-            break;
-    }
-    timesteps.reset(this.outputType);
-    statistics.reset(this.outputType);
-    products.reset(this.outputType);
+    this.map.data.revertStyle();
+
+    output.switchStyle();
 };
 
 /**
