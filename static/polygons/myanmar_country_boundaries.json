@@ -155291,6 +155291,7 @@
       "properties": {
         "OBJECTID": 1,
         "Name": "MYANMAR",
+        "ST": "Myanmar",
         "Area": 669672.795231
       }
     }

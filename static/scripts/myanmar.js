@@ -28,8 +28,6 @@ myanmar.App = function () {
         myanmar.instance.showChart();
     });
 
-    //this.addCountries(countriesMapId, countriesToken);
-    this.createProvinces();
     this.map.data.addListener('click', this.handleMapClick.bind(this));
 
     // Register a click handler to hide the panel when the user clicks close.
@@ -78,6 +76,10 @@ myanmar.App.prototype.initVals = function () {
     statistics.resetRadios(this.selectionType);
     products.resetRadios(this.selectionType);
 
+    //Load features after instance has been created
+    area.loadFeatures('country', function () {
+        area.add(area.getAreaFeature('Myanmar'), 'Myanmar')
+    });
 };
 
 /**
@@ -102,29 +104,6 @@ myanmar.App.prototype.createMap = function () {
     };
     var mapEl = $('.map').get(0);
     return new google.maps.Map(mapEl, mapOptions);
-};
-
-
-/**
- * Retrieves the JSON data for each Region
- * Loads the JSON as GeoJSON to the map's data, letting each Region become a feature
- */
-myanmar.App.prototype.createProvinces = function () {
-    this.map.data.loadGeoJson('static/polygons/myanmar_state_region_boundaries.json');
-    this.map.data.setStyle(function (feature) {
-        return myanmar.App.UNSELECTED_STYLE;
-    });
-};
-
-/**
- * Retrieves the JSON data for each District
- * Loads the JSON as GeoJSON to the map's data, letting each District become a feature
- */
-myanmar.App.prototype.createDistricts = function () {
-    this.map.data.loadGeoJson('static/polygons/myanmar_districts_boundaries.json');
-    this.map.data.setStyle(function (feature) {
-        return myanmar.App.UNSELECTED_STYLE;
-    });
 };
 
 /**
@@ -275,10 +254,7 @@ myanmar.App.prototype.checkSelections = function (product, statistic, timestep) 
 myanmar.App.prototype.handleMapClick = function (event) {
 
     if (this.selectionMethod === 'area') {
-        var feature = event.feature;
-        var name = feature.getProperty('ST');
-        console.log('Clicked area: ' + name);
-        area.add(feature, name);
+        area.add(event.feature);
     }
 };
 

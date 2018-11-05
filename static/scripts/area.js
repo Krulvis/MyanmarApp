@@ -3,30 +3,86 @@ area = {};
 $(function () {
 
     //Get GeoJSON for all countries
-    let names = [];
+    area.regions = [];
+    area.districts = [];
     $.getJSON('static/polygons/myanmar_state_region_boundaries.json', function (json) {
         json.features.forEach(function (feature) {
-            names.push(feature.properties.ST);
+            area.regions.push(feature.properties.ST);
         });
     });
+
     $.getJSON('static/polygons/myanmar_district_boundaries.json', function (json) {
         json.features.forEach(function (feature) {
-            names.push(feature.properties.ST);
+            area.districts.push(feature.properties.DT);
         });
     });
-    $("#area-field").autocomplete({
-        source: names,
-        select: area.handleRegionUIClick
-    });
+
 
     $('.area-table').on('click', '.remove-area', function () {
         var tr = $(this).closest('tr');
         var title = tr.find('.area-name').html();
-        console.log('Removing Area: ' + title);
-
+        myanmar.instance.map.data.forEach(function (f) {
+            if (area.getName(f) === title) {
+                area.removeFromMap(f);
+            }
+        });
         tr.remove();
     });
+
+    $('.areas-selection input[type=radio]').change(function () {
+        area.loadFeatures(this.id);
+    });
 });
+
+/**
+ * Resets table and removes previous loaded features (even active)
+ * @param type
+ * @param callback
+ */
+area.loadFeatures = function (type, callback) {
+    myanmar.instance.map.data.forEach(function (feature) {
+        // if (feature.getProperty('active') !== 'true' || feature.getProperty('ST') === 'Myanmar') {
+        myanmar.instance.map.data.remove(feature);
+        // }
+    });
+
+    //Clear table
+    $(".area-table tbody").empty();
+
+    const areaField = $('#area-field');
+    //Set auto complete
+    switch (type) {
+        case 'country':
+            myanmar.instance.map.data.loadGeoJson('static/polygons/myanmar_country_boundaries.json');
+            areaField.prop('disabled', true);
+            break;
+        case 'districts':
+            myanmar.instance.map.data.loadGeoJson('static/polygons/myanmar_district_boundaries.json');
+            areaField.prop('disabled', false);
+            areaField.autocomplete({
+                source: area.districts,
+                select: area.handleRegionUIClick
+            });
+            break;
+        case 'regions':
+            myanmar.instance.map.data.loadGeoJson('static/polygons/myanmar_state_region_boundaries.json');
+            areaField.prop('disabled', false);
+            areaField.autocomplete({
+                source: area.regions,
+                select: area.handleRegionUIClick
+            });
+            break;
+    }
+    //Set all to unselected style
+    myanmar.instance.map.data.setStyle(function (feature) {
+        if (callback != null) {
+            callback();
+        }
+        return myanmar.App.UNSELECTED_STYLE;
+    });
+
+
+};
 
 /**
  * Handles click on UI, marks and sets clicked country name
@@ -35,17 +91,18 @@ $(function () {
  */
 area.handleRegionUIClick = function (event, ui) {
     var name = ui.item.label;
-    console.log('Clicked: ' + name);
-
     const feature = area.getAreaFeature(name);
-    area.add(feature, name);
+    area.add(feature);
 };
 
+/**
+ * Returns feature from map for given name
+ */
 area.getAreaFeature = function (name) {
     let feature = null;
     myanmar.instance.map.data.forEach(function (f) {
-        if (f.getProperty('ST') === name) {
-            return (f = feature);
+        if (area.getName(f) === name) {
+            return (feature = f);
         }
     });
     return feature;
@@ -54,11 +111,19 @@ area.getAreaFeature = function (name) {
 /**
  * Add marker to map and
  */
-area.add = function (feature, title) {
-    console.log('Adding area: ' + title);
+area.add = function (feature) {
+    if (feature.getProperty('active') === 'true') {
+        console.log('Already added: ');
+        return;
+    }
+
+    const title = area.getName(feature);
+
 
     //Draw on map
     myanmar.instance.map.data.overrideStyle(feature, myanmar.App.SELECTED_STYLE);
+
+    //Set to active
     feature.setProperty('active', 'true');
 
     //Add to table
@@ -66,11 +131,33 @@ area.add = function (feature, title) {
     $('.area-table tbody').append(tableContent);
 };
 
+
 /**
- * Remove an area from selec
+ * Returns name of feature using the current selected filtering type
+ * @param feature
+ * @returns {string}
+ */
+area.getName = function (feature) {
+    const filter = area.getSelectedTyped() === 'districts' ? 'DT' : 'ST';
+    return feature.getProperty(filter);
+};
+
+/**
+ * Remove an area from map
  * @param name
  */
-area.remove = function (name) {
+area.removeFromMap = function (feature) {
+    console.log('Removing feature: ' + area.getName(feature));
+    feature.removeProperty('active');
+    //Remove draw
+    myanmar.instance.map.data.overrideStyle(feature, myanmar.App.UNSELECTED_STYLE);
+};
 
+/**
+ * Returns id of selected radio-checkbox
+ * @returns {id}
+ */
+area.getSelectedTyped = function () {
+    return $('.areas-selection input:radio:checked').attr('id');
 };
 
