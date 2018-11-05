@@ -27,6 +27,7 @@ $(function () {
             }
         });
         tr.remove();
+        output.reset();
     });
 
     $('.areas-selection input[type=radio]').change(function () {
@@ -48,6 +49,7 @@ area.loadFeatures = function (type, callback) {
 
     //Clear table
     $(".area-table tbody").empty();
+    output.reset();
 
     const areaField = $('#area-field');
     //Set auto complete
@@ -129,6 +131,7 @@ area.add = function (feature) {
     //Add to table
     var tableContent = '<tr><td class="area-name">' + title + '</td><td><button class="btn btn-danger remove-area">Remove</button></td></tr>';
     $('.area-table tbody').append(tableContent);
+    output.reset();
 };
 
 
@@ -138,7 +141,7 @@ area.add = function (feature) {
  * @returns {string}
  */
 area.getName = function (feature) {
-    const filter = area.getSelectedTyped() === 'districts' ? 'DT' : 'ST';
+    const filter = area.getSelectedAreaType() === 'districts' ? 'DT' : 'ST';
     return feature.getProperty(filter);
 };
 
@@ -157,7 +160,7 @@ area.removeFromMap = function (feature) {
  * Returns id of selected radio-checkbox
  * @returns {id}
  */
-area.getSelectedTyped = function () {
+area.getSelectedAreaType = function () {
     return $('.areas-selection input:radio:checked').attr('id');
 };
 

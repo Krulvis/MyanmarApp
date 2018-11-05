@@ -35,7 +35,6 @@ myanmar.App = function () {
 
     //Respond to radio button clicks (switching input style)
     $('.method-container .nav-item').on('click', this.switchStyle.bind(this));
-    $('.create-buttons .nav-item').on('click', this.switchOutput.bind(this));
 
     //Adds a marker for given input
     $('.add-marker').on('click', markers.addMarkerFromForm.bind(this));
@@ -69,12 +68,12 @@ myanmar.App = function () {
 myanmar.App.prototype.initVals = function () {
     this.markers = [];
     this.selectionMethod = 'area';
-    this.selectionType = 'graph';
+    this.outputType = 'graph';
     this.chartData = null;
     this.chartTitle = 'Chart';
-    timesteps.resetRadios(this.selectionType);
-    statistics.resetRadios(this.selectionType);
-    products.resetRadios(this.selectionType);
+    timesteps.reset(this.outputType);
+    statistics.reset(this.outputType);
+    products.reset(this.outputType);
 
     //Load features after instance has been created
     area.loadFeatures('country', function () {
@@ -379,22 +378,9 @@ myanmar.App.prototype.switchStyle = function (event) {
             area.draw(false);
             break;
     }
-    timesteps.resetRadios(this.selectionType);
-    statistics.resetRadios(this.selectionType);
-    products.resetRadios(this.selectionType);
-};
-
-/**
- * Changes the option menu depending on which type= [overlay/graph] is clicked
- * @param event
- */
-myanmar.App.prototype.switchOutput = function (event) {
-    var method = this.selectionMethod;
-    var type = $(event.target).text().toLowerCase();
-    this.selectionType = type;
-    timesteps.resetRadios(type);
-    statistics.resetRadios(type);
-    products.resetRadios(type);
+    timesteps.reset(this.outputType);
+    statistics.reset(this.outputType);
+    products.reset(this.outputType);
 };
 
 /**

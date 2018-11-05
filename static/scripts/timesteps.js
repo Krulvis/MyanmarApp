@@ -1,6 +1,6 @@
 timesteps = {};
 
-timesteps.resetRadios = function (type) {
+timesteps.reset = function (type) {
     var options = $('.create-options');
     this.removeFrom(options);
     if (type === 'graph') {

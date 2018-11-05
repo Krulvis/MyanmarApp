@@ -1,27 +1,27 @@
 products = {};
 
-products.resetRadios = function (type) {
+products.reset = function (output) {
     var options = $('.create-options');
     this.removeFrom(options);
-    if (type === 'graph') {
+    if (output === 'graph') {
         switch (myanmar.instance.selectionMethod) {
-            case 'country':
-                this.addTo(type, options);
+            case 'area':
+                this.addTo(output, options);
                 break;
             case 'shapefile':
-                this.addTo(type, options);
+                this.addTo(output, options);
                 break;
             case 'coordinate':
-                this.addTo(type, options);
+                this.addTo(output, options);
                 break;
         }
-    } else if (type === 'overlay') {
+    } else if (output === 'overlay') {
         switch (myanmar.instance.selectionMethod) {
-            case 'country':
-                this.addTo(type, options);
+            case 'area':
+                this.addTo(output, options);
                 break;
             case 'shapefile':
-                this.addTo(type, options);
+                this.addTo(output, options);
                 break;
             case 'coordinate':
                 break;
@@ -29,8 +29,13 @@ products.resetRadios = function (type) {
     }
 };
 
-products.addTo = function (type, element) {
-    var radio = type === 'graph' ? 'checkbox' : 'radio';
+products.addTo = function (output, element) {
+    let radio = output === 'graph' ? 'checkbox' : 'radio';
+    const rowCount = $('.area-table tbody').find('tr').length;
+    console.log('Table length: ' + rowCount);
+    if (myanmar.instance.selectionMethod === 'area' && rowCount > 1) {
+        radio = 'radio'
+    }
     if (element.find('.products-container').length === 0) {
         element.prepend(products.html(radio));
     }
@@ -38,6 +43,16 @@ products.addTo = function (type, element) {
 
 products.removeFrom = function (element) {
     element.find('.products-container').remove();
+};
+
+products.updateTo = function (radio) {
+    const remove = radio === 'radio' ? 'checkbox' : 'radio';
+    const divs = $('.products-container .custom-control');
+    divs.each(function (i, el) {
+        $(el).removeClass('custom-' + remove);
+        $(el).addClass('custom-' + radio);
+        $(el).find('input').attr('type', radio);
+    })
 };
 
 products.html = function (radio) {

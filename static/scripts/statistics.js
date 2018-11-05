@@ -1,6 +1,6 @@
 statistics = {};
 
-statistics.resetRadios = function (type) {
+statistics.reset = function (type) {
     var options = $('.create-options');
     this.removeFrom(options);
     if (type === 'graph') {
