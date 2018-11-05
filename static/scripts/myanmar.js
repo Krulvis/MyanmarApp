@@ -44,11 +44,11 @@ myanmar.App = function () {
 
     //Add functionality to buttons
     $('#overlay-button').on('click', function (event) {
-        myanmar.instance.getOverlay();
+        myanmar.instance.createOverlay();
     });
 
     $('#graph-button').on('click', function (event) {
-        myanmar.instance.getGraph();
+        myanmar.instance.createGraph();
     });
 
     $('#download-csv-btn').click(function () {
@@ -77,6 +77,7 @@ myanmar.App.prototype.initVals = function () {
 
     //Load features after instance has been created
     area.loadFeatures('country', function () {
+        //Start by selecting Myanmar
         area.add(area.getAreaFeature('Myanmar'), 'Myanmar')
     });
 };
@@ -108,22 +109,24 @@ myanmar.App.prototype.createMap = function () {
 /**
  * Adds Rainfall Overlay to map using currently set Dates and targetRegion
  */
-myanmar.App.prototype.getOverlay = function () {
-    var startDate = $('#startDate').val();
-    var endDate = $('#endDate').val();
-    var button = $('#overlay-button');
-    var overlay = $('#overlay');
-    var downloadImg = $('.download-img');
-    var downloadCSV = $('.download-csv');
-    var product = this.getProduct();
-    var timestep = this.getTimestep();
-    var statistic = this.getStatistic();
-    var error = $('#error-message');
+myanmar.App.prototype.createOverlay = function () {
+    const startDate = $('#startDate').val();
+    const endDate = $('#endDate').val();
+    const button = $('#overlay-button');
+    const downloadImg = $('.download-img');
+    const downloadCSV = $('.download-csv');
+    const product = this.getProduct();
+    const timestep = 'day';//this.getTimestep();
+    const statistic = 'sum';//this.getStatistic();
+    const target = this.getTarget();
+    const areaType = area.getSelectedAreaType();
+
+    let error = $('#error-message');
     if (!this.checkSelections(product, statistic, timestep)) {
         return;
     }
     $.ajax({
-        url: '/overlay?startDate=' + startDate + '&endDate=' + endDate + '&method=' + this.selectionMethod + '&product=' + product + '&statistic=' + statistic + '&target=' + this.getTarget() + '&timestep=' + timestep,
+        url: '/overlay?startDate=' + startDate + '&endDate=' + endDate + '&method=' + this.selectionMethod + '&product=' + product + '&statistic=' + statistic + '&target=' + target + '&areaType=' + areaType + '&timestep=' + timestep,
         method: 'GET',
         beforeSend: function () {
             button.html('Loading map overlay...');
@@ -158,7 +161,7 @@ myanmar.App.prototype.getOverlay = function () {
 /**
  * Get Graph data for targetRegion
  */
-myanmar.App.prototype.getGraph = function () {
+myanmar.App.prototype.createGraph = function () {
     var startDate = $('#startDate').val();
     var endDate = $('#endDate').val();
     var button = $('#graph-button');
@@ -208,9 +211,9 @@ myanmar.App.prototype.checkSelections = function (product, statistic, timestep) 
     var error = $('#error-message');
     error.hide();
     switch (this.selectionMethod) {
-        case 'country':
-            if (this.selectedCountry === null) {
-                error.show().html('Select a Country first!');
+        case 'area':
+            if (area.getSelectedAreas().length === 0) {
+                error.show().html('Select an Area first!');
                 return false;
             }
             break;
@@ -226,10 +229,6 @@ myanmar.App.prototype.checkSelections = function (product, statistic, timestep) 
                 error.show().html('Add a link retrieved from <a href="https://code.earthengine.google.com/">Google EE API</a>');
                 return false;
             }
-            // else if ($('.validated-shapefile').css('display') === 'none') {
-            //     error.show().html('Please validate the Shapefile first!');
-            //     return false;
-            // }
             break;
     }
     console.log('Prodcut: ' + product + ', statistic: ' + statistic + ', Timestep: ' + timestep);
@@ -419,12 +418,12 @@ myanmar.App.prototype.getStatistic = function () {
  */
 myanmar.App.prototype.getTarget = function () {
     switch (this.selectionMethod) {
-        case "country":
-            return this.selectedCountry.getProperty('Country');
+        case "area":
+            return area.getSelectedAreas().join(',');
         case 'shapefile':
             return $('#shapefile-link').val();
         case 'coordinate':
-            return area.getJSON();
+            return marker.getJSON();
         default:
             $('#error-message').show().html('Please select a method of targeting first!');
             return 'null';

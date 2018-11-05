@@ -141,8 +141,11 @@ area.add = function (feature) {
  * @returns {string}
  */
 area.getName = function (feature) {
-    const filter = area.getSelectedAreaType() === 'districts' ? 'DT' : 'ST';
-    return feature.getProperty(filter);
+    return feature.getProperty(area.getFilterSTDT());
+};
+
+area.getFilterSTDT = function () {
+    return area.getSelectedAreaType() === 'districts' ? 'DT' : 'ST';
 };
 
 /**
@@ -162,5 +165,18 @@ area.removeFromMap = function (feature) {
  */
 area.getSelectedAreaType = function () {
     return $('.areas-selection input:radio:checked').attr('id');
+};
+
+/**
+ * Return the selected area names
+ */
+area.getSelectedAreas = function () {
+    let names = [];
+    myanmar.instance.map.data.forEach(function (f) {
+        if (f.getProperty('active') === 'true') {
+            names.push(area.getName(f));
+        }
+    });
+    return names;
 };
 

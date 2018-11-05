@@ -95,29 +95,32 @@ class OverlayHandler(webapp2.RequestHandler):
     def get(self):
         start_date = self.request.get('startDate')
         end_date = self.request.get('endDate')
-        target = self.request.get('target')
+        targets = self.request.get('target').split(',')
+        print(targets)
         product = self.request.get('product')
         statistic = self.request.get('statistic')
         method = self.request.get('method')
+        area_type = self.request.get('areaType')
         values = {}
-        if method == 'country':
-            feature = GetCountryFeature(target)
+        if method == 'area':
+            geometry = GetAreaGeometry(targets, area_type)
             # values['center'] = feature.centroid().getInfo()['coordinates']
         elif method == 'shapefile':
-            feature = GetShapeFileFeature(target)
+            geometry = GetShapeFileFeature(targets)
             # values['center'] = feature.centroid().getInfo()['coordinates']
         else:
-            json_data = json.loads(target)
-            print(json_data)
-            feature = ee.Feature(json_data)
+            values['error'] = 'Did not set correct method!'
+            self.response.headers['Content-Type'] = 'application/json'
+            self.response.out.write(json.dumps(values))
+            return
 
         try:
             collection = GetOverlayImageCollection(start_date, end_date, product)
             calced = GetCalculatedCollection(collection, statistic)
             min_max = calced.reduce(ee.Reducer.minMax())
-            min = GetMin(min_max, feature)
-            max = GetMax(min_max, feature)
-            overlay = GetOverlayImage(calced, feature, min, max)
+            min = GetMin(min_max, geometry)
+            max = GetMax(min_max, geometry)
+            overlay = GetOverlayImage(calced, geometry, min, max)
             data = overlay.getMapId()
             values['mapid'] = data['mapid']
             values['token'] = data['token']
@@ -126,7 +129,7 @@ class OverlayHandler(webapp2.RequestHandler):
             values['download_url'] = overlay.getDownloadURL()
         except (ee.EEException, HTTPException):
             # Handle exceptions from the EE client library.
-            e = sys.exc_info()[0]
+            e = sys.exc_info()
             values['error'] = ErrorHandling(e)
         finally:
             self.response.headers['Content-Type'] = 'application/json'
@@ -139,18 +142,22 @@ class GraphHandler(webapp2.RequestHandler):
         name = self.request.relative_url
         start_date = self.request.get('startDate')
         end_date = self.request.get('endDate')
-        target = self.request.get('target')
+        targets = self.request.get('target').split(',')
+        area_type = self.request.get('areaType')
         product = self.request.get('product')
         statistic = self.request.get('statistic')
         timestep = self.request.get('timestep')
         method = self.request.get('method')
         if method == 'coordinate':
-            data = json.loads(target)
+            data = json.loads(targets)
             print(data)
             features = data['features']
             content = GetPointsLineSeries(str(name), start_date, end_date, product, features)
+        elif len(targets) > 1:
+            return
         else:
-            content = GetOverlayGraphSeries(str(name), start_date, end_date, target, method, product.split(","),
+            content = GetOverlayGraphSeries(str(name), start_date, end_date, targets, area_type, method,
+                                            product.split(","),
                                             timestep)
         self.response.headers['Content-Type'] = 'application/json'
         self.response.out.write(content)
@@ -171,10 +178,9 @@ class SFHandler(webapp2.RequestHandler):
 class TestHandler(webapp2.RequestHandler):
 
     def get(self):
-        path = os.path.join(os.path.split(__file__)[0], 'static/shapefiles/Kalanga2.zip')
-        with open(path) as f:
-            features = ee.FeatureCollection(f)
-            print(features.getInfo())
+        features = ee.FeatureCollection('users/joepkt/myanmar_district_boundaries')
+        kayeh = features.filter(ee.Filter.eq('DT', 'Kayeh'))
+        print(kayeh.getInfo())
 
 
 # http://webapp-improved.appspot.com/tutorials/quickstart.html
@@ -291,7 +297,11 @@ def GetPointData(start_date, months, product, point_feature):
 #                                Graph For Regions.                           #
 ###############################################################################
 
-def GetOverlayGraphSeries(details_name, start_date, end_date, target, method, products, timestep):
+def GetGraphForRegionComparison():
+    return
+
+
+def GetOverlayGraphSeries(details_name, start_date, end_date, target, area_type, method, products, timestep):
     """Returns data to draw graphs with"""
     json_data = memcache.get(details_name)
     # If we've cached details for this polygon, return them.
@@ -302,8 +312,8 @@ def GetOverlayGraphSeries(details_name, start_date, end_date, target, method, pr
 
     # Else build new dictionary
     details = {}
-    if method == 'country':
-        region = GetCountryFeature(target)
+    if method == 'area':
+        region = GetAreaGeometry(target, area_type)
     elif method == 'shapefile':
         region = GetShapeFileFeature(target)
     else:
@@ -370,18 +380,49 @@ def GetProductForName(name):
     return PRODUCTS[0]
 
 
-def GetCountryFeature(country):
-    """Returns an ee.Feature for the polygon with the given ID."""
-    # Note: The polygon IDs are read from the filesystem in the initialization
-    # section below. "sample-id" corresponds to "static/polygons/sample-id.json".
-    return COUNTRIES.filter(ee.Filter.inList('Country', [country])).geometry().dissolve()
-    # path = COUNTRIES_PATH
+def GetAreaFeature(name, type):
+    if type == 'regions':
+        stdt = 'ST'
+        path = REGIONS_PATH
+    elif type == 'country':
+        stdt = 'ST'
+        path = MYANMAR_PATH
+    else:
+        stdt = 'DT'
+        path = DISTRICTS_PATH
+
+    path = os.path.join(os.path.split(__file__)[0], path)
+    with open(path) as f:
+        data = json.load(f)
+        areas = [ee.Feature(k) for k in data["features"]]
+        collection = ee.FeatureCollection(areas)
+        feature = collection.filter(ee.Filter.eq(stdt, name))
+        return feature
+
+
+def GetAreaGeometry(names, area_type):
+    """Returns an ee.Geometry for the area's with given names."""
+    if area_type == 'regions':
+        stdt = 'ST'
+        path = REGIONS_PATH
+    elif area_type == 'country':
+        stdt = 'ST'
+        path = MYANMAR_PATH
+    else:
+        stdt = 'DT'
+        path = DISTRICTS_PATH
+
+    features = ee.FeatureCollection(path)
+    areas = features.filter(ee.Filter.inList(stdt, names))
+    return areas.geometry()
+    # From JSON VV
     # path = os.path.join(os.path.split(__file__)[0], path)
     # with open(path) as f:
     #     data = json.load(f)
-    #     countries = [ee.Feature(k) for k in data["features"]]
-    #     collections = ee.FeatureCollection(countries)
-    #     return collections.filterMetadata('Country', 'equals', country)
+    #     areas = [ee.Feature(k) for k in data["features"]]
+    #     collection = ee.FeatureCollection(areas)
+    #     features = collection.filter(ee.Filter.inList(stdt, names))
+    #     return features.geometry().dissolve()
 
 
 def GetShapeFileFeature(shapefile):
@@ -432,7 +473,9 @@ def ErrorHandling(e):
 # https://cloud.google.com/appengine/docs/python/memcache/
 MEMCACHE_EXPIRATION = 60 * 60 * 24
 
-COUNTRIES_PATH = 'static/polygons/countries2.json'
+DISTRICTS_PATH = 'users/joepkt/myanmar_district_boundaries'
+REGIONS_PATH = 'users/joepkt/myanmar_state_region_boundaries'
+MYANMAR_PATH = 'users/joepkt/myanmar_country_boundaries'
 
 ###############################################################################
 #                               Initialization.                               #
@@ -452,12 +495,13 @@ JINJA2_ENVIRONMENT = jinja2.Environment(
 
 # Initialize the EE API.
 ee.Initialize(EE_CREDENTIALS)
-urlfetch.set_default_fetch_deadline(80)
+urlfetch.set_default_fetch_deadline(500)
+
 
 ###############################################################################
 #                               Building the ImageCollections.                #
 ###############################################################################
-COUNTRIES = ee.FeatureCollection('ft:1tdSwUL7MVpOauSgRzqVTOwdfy17KDbw-1d9omPw')
+# COUNTRIES = ee.FeatureCollection('ft:1tdSwUL7MVpOauSgRzqVTOwdfy17KDbw-1d9omPw')
 
 
 def Multiply(i, value):
@@ -479,7 +523,7 @@ PRODUCTS = [
     {
         'name': 'CHIRPS',
         'collection': CHIRPS,
-        'scale': 5000
+        'scale': 1000
     },
     {
         'name': 'PERSIANN',
