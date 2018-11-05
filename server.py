@@ -96,7 +96,6 @@ class OverlayHandler(webapp2.RequestHandler):
         start_date = self.request.get('startDate')
         end_date = self.request.get('endDate')
         targets = self.request.get('target').split(',')
-        print(targets)
         product = self.request.get('product')
         statistic = self.request.get('statistic')
         method = self.request.get('method')
@@ -385,7 +384,8 @@ def GetAreaFeature(name, type):
         stdt = 'ST'
         path = REGIONS_PATH
     elif type == 'country':
-        stdt = 'ST'
+        stdt = 'Name'
+        name = name.upper()
         path = MYANMAR_PATH
     else:
         stdt = 'DT'
@@ -406,8 +406,9 @@ def GetAreaGeometry(names, area_type):
         stdt = 'ST'
         path = REGIONS_PATH
     elif area_type == 'country':
-        stdt = 'ST'
+        stdt = 'Name'
         path = MYANMAR_PATH
+        names = [name.upper() for name in names]
     else:
         stdt = 'DT'
         path = DISTRICTS_PATH
