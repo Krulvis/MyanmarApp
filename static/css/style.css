@@ -30,7 +30,7 @@ body,
     top: 100px;
     overflow-y: auto;
     overflow-x: hidden;
-    max-height: 90%;
+    max-height: 85%;
     max-width: 600px;
     font-size: 14px;
 }
@@ -160,6 +160,7 @@ body,
 @media (max-height: 600px) {
     .futurewater .settings {
         top: 0;
+        max-height: 100%;
     }
 }
 
@@ -168,6 +169,7 @@ body,
     .futurewater .settings .logo {
         top: 22px;
         left: 30px;
+        max-height: 50%;
     }
 
     .futurewater .panel {
