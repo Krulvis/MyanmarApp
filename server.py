@@ -102,7 +102,7 @@ class OverlayHandler(webapp2.RequestHandler):
         area_type = self.request.get('areaType')
         values = {}
         if method == 'area':
-            geometry = GetAreaGeometry(targets, area_type)
+            geometry = GetMultiAreaGeometry(targets, area_type)
             # values['center'] = feature.centroid().getInfo()['coordinates']
         elif method == 'shapefile':
             geometry = GetShapeFileFeature(targets)
@@ -141,7 +141,7 @@ class GraphHandler(webapp2.RequestHandler):
         name = self.request.relative_url
         start_date = self.request.get('startDate')
         end_date = self.request.get('endDate')
-        targets = self.request.get('target').split(',')
+        targets = self.request.get('target')
         area_type = self.request.get('areaType')
         product = self.request.get('product')
         statistic = self.request.get('statistic')
@@ -152,10 +152,17 @@ class GraphHandler(webapp2.RequestHandler):
             print(data)
             features = data['features']
             content = GetPointsLineSeries(str(name), start_date, end_date, product, features)
-        elif len(targets) > 1:
-            return
+        # elif len(targets) > 1:
+        #     content = {}
+        #     for target in targets:
+        #         name = str(target) + str(area_type) + str(start_date) + str(end_date) + str(method) + str(
+        #             product) + str(timestep)
+        #         content[target] = GetOverlayGraphSeries(name, start_date, end_date, target, area_type, method,
+        #                                                 product.split(','),
+        #                                                 timestep)
+        #     print(content)
         else:
-            content = GetOverlayGraphSeries(str(name), start_date, end_date, targets, area_type, method,
+            content = GetOverlayGraphSeries(str(name), start_date, end_date, targets.split(','), area_type, method,
                                             product.split(","),
                                             timestep)
         self.response.headers['Content-Type'] = 'application/json'
@@ -199,7 +206,7 @@ app = webapp2.WSGIApplication([
 def GetOverlayImageCollection(start_date, end_date, product_name):
     start_date = ee.Date(start_date)
     end_date = ee.Date(end_date)
-    product = GetProductForName(product_name)
+    product = PRODUCTS[product_name]
     return product['collection'].filterDate(start_date, end_date)
 
 
@@ -233,7 +240,7 @@ def GetOverlayImage(images, region, min, max):
 #                                Graph For Points.                            #
 ###############################################################################
 
-def GetPointsLineSeries(details_name, start_date, end_date, product, point_features):
+def GetPointsLineSeries(details_name, start_date, end_date, product_name, point_features):
     # Get from cache
     json_data = memcache.get(details_name)
     if json_data is not None:
@@ -245,7 +252,7 @@ def GetPointsLineSeries(details_name, start_date, end_date, product, point_featu
     start_date = ee.Date(start_date)
     end_date = ee.Date(end_date)
     months = ee.List.sequence(0, end_date.difference(start_date, 'month').toInt())
-    product = GetProductForName(product)
+    product = PRODUCTS[product_name]
 
     point_features = map(ee.Feature, point_features)  # Map to ee.Feature (loads GeoJSON)
     details = {}
@@ -296,12 +303,12 @@ def GetPointData(start_date, months, product, point_feature):
 #                                Graph For Regions.                           #
 ###############################################################################
 
-def GetGraphForRegionComparison():
+def GetGraphForRegionComparison(details_name, start_date, end_date, targets, area_type, method, product, timestep):
     return
 
 
-def GetOverlayGraphSeries(details_name, start_date, end_date, target, area_type, method, products, timestep):
-    """Returns data to draw graphs with"""
+def GetOverlayGraphSeries(details_name, start_date, end_date, targets, area_type, method, products, timestep):
+    """Returns data to draw graphs with for single area"""
     json_data = memcache.get(details_name)
     # If we've cached details for this polygon, return them.
     if json_data is not None:
@@ -309,23 +316,32 @@ def GetOverlayGraphSeries(details_name, start_date, end_date, target, area_type,
         print(json_data)
         return json_data
 
-    # Else build new dictionary
     details = {}
-    if method == 'area':
-        region = GetAreaGeometry(target, area_type)
-    elif method == 'shapefile':
-        region = GetShapeFileFeature(target)
-    else:
-        json_data = json.loads(target)
-        print(json_data)
-        region = ee.Feature(json_data)
-
-    # Try building json dict for each method
     try:
         print('NOT CACHE:')
-        for product in PRODUCTS:
-            if product['name'] in products:
-                details[product['name']] = ComputeGraphSeries(start_date, end_date, region, product, timestep)
+        # Else build new dictionary
+
+        if method == 'area':
+            if len(targets) > 1:  # Multiple area's means one product (build dictionary of Area's with their data)
+                print(targets)
+                print(products)
+                details = {target: ComputeGraphSeries(start_date, end_date, GetAreaGeometry(target, area_type),
+                                                      PRODUCTS[products[0]], timestep) for
+                           target in targets}
+            else:
+                region = GetAreaGeometry(targets, area_type)
+                details = {product: ComputeGraphSeries(start_date, end_date, region, PRODUCTS[product], timestep) for
+                           product in products}
+        elif method == 'shapefile':
+            region = GetShapeFileFeature(targets)
+            details = {product: ComputeGraphSeries(start_date, end_date, region, PRODUCTS[product], timestep) for
+                       product in products}
+        else:  # Coordinate
+            json_data = json.loads(targets)
+            print(json_data)
+            region = ee.Feature(json_data)
+            details = {product: ComputeGraphSeries(start_date, end_date, region, PRODUCTS[product], timestep) for
+                       product in products}
         print(details)
         graph = OrderForGraph(details)
         json_data = json.dumps(graph)
@@ -333,7 +349,7 @@ def GetOverlayGraphSeries(details_name, start_date, end_date, target, area_type,
         memcache.add(details_name, json_data, MEMCACHE_EXPIRATION)
     except (ee.EEException, HTTPException):
         # Handle exceptions from the EE client library.
-        e = sys.exc_info()[0]
+        e = sys.exc_info()
         details['error'] = ErrorHandling(e)
         json_data = json.dumps(details)
     finally:
@@ -372,35 +388,25 @@ def ComputeGraphSeries(start_date, end_date, region, product, timestep):
 #                                   Helpers.                                  #
 ###############################################################################
 
-def GetProductForName(name):
-    for p in PRODUCTS:
-        if p['name'] == name:
-            return p
-    return PRODUCTS[0]
-
-
-def GetAreaFeature(name, type):
-    if type == 'regions':
+def GetAreaGeometry(name, area_type):
+    """Returns an ee.Geometry for the area's with given names."""
+    if area_type == 'regions':
         stdt = 'ST'
         path = REGIONS_PATH
-    elif type == 'country':
+    elif area_type == 'country':
         stdt = 'Name'
-        name = name.upper()
         path = MYANMAR_PATH
+        names = name.upper()
     else:
         stdt = 'DT'
         path = DISTRICTS_PATH
 
-    path = os.path.join(os.path.split(__file__)[0], path)
-    with open(path) as f:
-        data = json.load(f)
-        areas = [ee.Feature(k) for k in data["features"]]
-        collection = ee.FeatureCollection(areas)
-        feature = collection.filter(ee.Filter.eq(stdt, name))
-        return feature
+    features = ee.FeatureCollection(path)
+    areas = features.filter(ee.Filter.eq(stdt, name))
+    return areas.geometry()
 
 
-def GetAreaGeometry(names, area_type):
+def GetMultiAreaGeometry(names, area_type):
     """Returns an ee.Geometry for the area's with given names."""
     if area_type == 'regions':
         stdt = 'ST'
@@ -520,36 +526,25 @@ CFSV2 = ee.ImageCollection('NOAA/CFSV2/FOR6H').select('Precipitation_rate_surfac
 GLDAS = ee.ImageCollection('NASA/GLDAS/V021/NOAH/G025/T3H').select('Rainf_tavg').map(
     lambda i: Multiply(i, 60 * 60 * 3))
 
-PRODUCTS = [
-    {
-        'name': 'CHIRPS',
+PRODUCTS = {
+    'CHIRPS': {
         'collection': CHIRPS,
         'scale': 1000
     },
-    {
-        'name': 'PERSIANN',
+    'PERSIANN': {
         'collection': PERSIANN,
         'scale': 5000
     },
-    {
-        'name': 'THRP',
+    'THRP': {
         'collection': TRMM,
         'scale': 30000
     },
-    {
-        'name': 'CFSV2',
+    'CFSV2': {
         'collection': CFSV2,
         'scale': 30000
     },
-    {
-        'name': 'GLDAS',
+    'GLDAS': {
         'collection': GLDAS,
         'scale': 30000
     }
-]
-# {
-#     'name': 'MOD16',
-#     'collection': MOD16,
-#     'scale': 500
-#
-# }
+}

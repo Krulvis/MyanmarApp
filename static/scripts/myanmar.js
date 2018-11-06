@@ -162,22 +162,25 @@ myanmar.App.prototype.createOverlay = function () {
  * Get Graph data for targetRegion
  */
 myanmar.App.prototype.createGraph = function () {
-    var startDate = $('#startDate').val();
-    var endDate = $('#endDate').val();
-    var button = $('#graph-button');
-    var graph = $('#graph');
-    var downloadImg = $('.download-img');
-    var downloadCSV = $('.download-csv');
-    var product = this.getProduct();
-    var statistic = this.getStatistic();
-    var timestep = this.getTimestep();
-    var error = $('#error-message');
+    const startDate = $('#startDate').val();
+    const endDate = $('#endDate').val();
+    const button = $('#graph-button');
+    const graph = $('#graph');
+    const downloadImg = $('.download-img');
+    const downloadCSV = $('.download-csv');
+    const product = this.getProduct();
+    const target = this.getTarget();
+    const areaType = area.getSelectedAreaType();
+    const statistic = this.getStatistic();
+    const timestep = this.getTimestep();
+
+    let error = $('#error-message');
     if (!this.checkSelections(product, statistic, timestep)) {
         return;
     }
     $.ajax({
         url: '/graph?startDate=' + startDate + '&endDate=' + endDate + '&method=' + this.selectionMethod
-            + '&product=' + product + '&statistic=' + statistic + '&target=' + this.getTarget() + '&timestep=' + timestep,
+            + '&product=' + product + '&statistic=' + statistic + '&target=' + target + '&areaType=' + areaType + '&timestep=' + timestep,
         method: 'GET',
         beforeSend: function () {
             downloadCSV.hide();
