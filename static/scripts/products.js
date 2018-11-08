@@ -60,10 +60,6 @@ products.html = function (radio) {
         '                            <label class="bold" for="products">Choose Product</label>\n' +
         '                            <div id="products">\n' +
         '                                <div class="custom-control custom-' + radio + ' custom-control-inline">\n' +
-        '                                    <input type="' + radio + '" id="TRMM" name="product" class="custom-control-input">\n' +
-        '                                    <label class="custom-control-label" for="TRMM">TRMM</label>\n' +
-        '                                </div>\n' +
-        '                                <div class="custom-control custom-' + radio + ' custom-control-inline">\n' +
         '                                    <input type="' + radio + '" id="PERSIANN" name="product" class="custom-control-input">\n' +
         '                                    <label class="custom-control-label" for="PERSIANN">PERSIANN</label>\n' +
         '                                </div>\n' +

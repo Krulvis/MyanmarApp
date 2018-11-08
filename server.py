@@ -112,27 +112,13 @@ class OverlayHandler(webapp2.RequestHandler):
             self.response.headers['Content-Type'] = 'application/json'
             self.response.out.write(json.dumps(values))
             return
-
-        try:
-            collection = GetOverlayImageCollection(start_date, end_date, product)
-            calced = GetCalculatedCollection(collection, statistic)
-            min_max = calced.reduce(ee.Reducer.minMax())
-            min = GetMin(min_max, geometry)
-            max = GetMax(min_max, geometry)
-            overlay = GetOverlayImage(calced, geometry, min, max)
-            data = overlay.getMapId()
-            values['mapid'] = data['mapid']
-            values['token'] = data['token']
-            values['min'] = min
-            values['max'] = max
-            values['download_url'] = overlay.getDownloadURL()
-        except (ee.EEException, HTTPException):
-            # Handle exceptions from the EE client library.
-            e = sys.exc_info()
-            values['error'] = ErrorHandling(e)
-        finally:
-            self.response.headers['Content-Type'] = 'application/json'
-            self.response.out.write(json.dumps(values))
+        values = GetOverlayFor(start_date, end_date, product, statistic, geometry)
+        tries = 0
+        while values['error'] == 'Timeout, deadline exceeded' and tries < 4:
+            tries = tries + 1
+            values = GetOverlayFor(start_date, end_date, product, statistic, geometry)
+        self.response.headers['Content-Type'] = 'application/json'
+        self.response.out.write(json.dumps(values))
 
 
 class GraphHandler(webapp2.RequestHandler):
@@ -202,6 +188,34 @@ app = webapp2.WSGIApplication([
 ###############################################################################
 #                                Overlay                                      #
 ###############################################################################
+def GetOverlayFor(start_date, end_date, product, statistic, geometry):
+    values = {}
+    try:
+        collection = GetOverlayImageCollection(start_date, end_date, product)
+        calced = GetCalculatedCollection(collection, statistic)
+        min_max = calced.reduce(ee.Reducer.minMax())
+        min = GetMin(min_max, geometry)
+        max = GetMax(min_max, geometry)
+        overlay = GetOverlayImage(calced, geometry, min, max)
+        data = overlay.getMapId()
+        values['mapid'] = data['mapid']
+        values['token'] = data['token']
+        values['min'] = min
+        values['max'] = max
+        values['download_url'] = overlay.getDownloadURL()
+    except (ee.EEException, HTTPException) as ex:
+        # Handle exceptions from the EE client library.
+        e = sys.exc_info()
+        print('type', type(ex).__name__)
+        print('ex args', ex.args)
+        if 'Deadline' in ex.args[0]:
+            values['error'] = 'Timeout, deadline exceeded'
+        else:
+            values['error'] = ErrorHandling(e)
+    finally:
+        print('Returning curr values')
+        return values
+
 
 def GetOverlayImageCollection(start_date, end_date, product_name):
     start_date = ee.Date(start_date)
@@ -393,6 +407,9 @@ def GetAreaGeometry(name, area_type):
     if area_type == 'regions':
         stdt = 'ST'
         path = REGIONS_PATH
+    elif area_type == 'basins':
+        stdt = 'Name'
+        path = BASINS_PATH
     elif area_type == 'country':
         stdt = 'Name'
         path = MYANMAR_PATH
@@ -411,6 +428,9 @@ def GetMultiAreaGeometry(names, area_type):
     if area_type == 'regions':
         stdt = 'ST'
         path = REGIONS_PATH
+    elif area_type == 'basins':
+        stdt = 'Name'
+        path = BASINS_PATH
     elif area_type == 'country':
         stdt = 'Name'
         path = MYANMAR_PATH
@@ -467,7 +487,7 @@ def OrderForGraph(details):
 def ErrorHandling(e):
     print('Error getting graph data ERROR CAUGHT')
     print(str(e))
-    return 'Area too large' if e is HTTPException else str(e)
+    return 'Area too large, deadline exceeded' if e is HTTPException else str(e)
 
 
 ###############################################################################
@@ -482,6 +502,7 @@ MEMCACHE_EXPIRATION = 60 * 60 * 24
 
 DISTRICTS_PATH = 'users/joepkt/myanmar_district_boundaries'
 REGIONS_PATH = 'users/joepkt/myanmar_state_region_boundaries'
+BASINS_PATH = 'users/joepkt/myanmar_river_basins'
 MYANMAR_PATH = 'users/joepkt/myanmar_country_boundaries'
 
 ###############################################################################
@@ -535,7 +556,7 @@ PRODUCTS = {
         'collection': PERSIANN,
         'scale': 5000
     },
-    'THRP': {
+    'TRMM': {
         'collection': TRMM,
         'scale': 30000
     },

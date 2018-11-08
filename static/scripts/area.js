@@ -5,6 +5,7 @@ $(function () {
     //Get GeoJSON for all countries
     area.regions = [];
     area.districts = [];
+    area.basins = [];
     $.getJSON('static/polygons/myanmar_state_region_boundaries.json', function (json) {
         json.features.forEach(function (feature) {
             area.regions.push(feature.properties.ST);
@@ -14,6 +15,12 @@ $(function () {
     $.getJSON('static/polygons/myanmar_district_boundaries.json', function (json) {
         json.features.forEach(function (feature) {
             area.districts.push(feature.properties.DT);
+        });
+    });
+
+    $.getJSON('static/polygons/myanmar_basins_boundaries.json', function (json) {
+        json.features.forEach(function (feature) {
+            area.basins.push(feature.properties.Name);
         });
     });
 
@@ -71,6 +78,14 @@ area.loadFeatures = function (type, callback) {
             areaField.prop('disabled', false);
             areaField.autocomplete({
                 source: area.regions,
+                select: area.handleRegionUIClick
+            });
+            break;
+        case 'basins':
+            myanmar.instance.map.data.loadGeoJson('static/polygons/myanmar_basins_boundaries.json');
+            areaField.prop('disabled', false);
+            areaField.autocomplete({
+                source: area.basins,
                 select: area.handleRegionUIClick
             });
             break;
@@ -145,7 +160,7 @@ area.getName = function (feature) {
 };
 
 area.getFilterSTDT = function () {
-    return area.getSelectedAreaType() === 'districts' ? 'DT' : 'ST';
+    return area.getSelectedAreaType() === 'basins' ? 'Name' : area.getSelectedAreaType() === 'districts' ? 'DT' : 'ST';
 };
 
 /**
