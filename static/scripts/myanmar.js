@@ -142,6 +142,7 @@ myanmar.App.prototype.createOverlay = function () {
     }).done((function (data) {
         if (data['error']) {
             error.show().html('Error: ' + data['error']);
+            button.html('Create overlay');
         } else {
             error.show().html('Map is being drawn... Please wait before drawing new map!');
             button.html(myanmar.App.OVERLAY_BASE_BUTTON_NAME);
