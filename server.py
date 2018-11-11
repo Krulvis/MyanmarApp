@@ -93,6 +93,7 @@ class MainHandler(webapp2.RequestHandler):
 class OverlayHandler(webapp2.RequestHandler):
 
     def get(self):
+        name = self.request.url
         start_date = self.request.get('startDate')
         end_date = self.request.get('endDate')
         targets = self.request.get('target').split(',')
@@ -101,6 +102,15 @@ class OverlayHandler(webapp2.RequestHandler):
         method = self.request.get('method')
         area_type = self.request.get('areaType')
         values = {}
+        json_data = memcache.get(name)
+        print('Getting For URL: ', name)
+        # If we've cached details for this URL, return them.
+        if json_data is not None:
+            print('From Cache:')
+            print(json_data)
+            self.response.headers['Content-Type'] = 'application/json'
+            self.response.out.write(json_data)
+            return
         if method == 'area':
             geometry = GetMultiAreaGeometry(targets, area_type)
             # values['center'] = feature.centroid().getInfo()['coordinates']
@@ -112,11 +122,11 @@ class OverlayHandler(webapp2.RequestHandler):
             self.response.headers['Content-Type'] = 'application/json'
             self.response.out.write(json.dumps(values))
             return
-        values = GetOverlayFor(start_date, end_date, product, statistic, geometry)
+        values = GetOverlayFor(str(name), start_date, end_date, product, statistic, geometry)
         tries = 0
-        while values['error'] == 'Timeout, deadline exceeded' and tries < 4:
+        while 'error' in values.keys() and values['error'] == 'Timeout, deadline exceeded' and tries < 4:
             tries = tries + 1
-            values = GetOverlayFor(start_date, end_date, product, statistic, geometry)
+            values = GetOverlayFor(str(name), start_date, end_date, product, statistic, geometry)
         self.response.headers['Content-Type'] = 'application/json'
         self.response.out.write(json.dumps(values))
 
@@ -124,7 +134,7 @@ class OverlayHandler(webapp2.RequestHandler):
 class GraphHandler(webapp2.RequestHandler):
 
     def get(self):
-        name = self.request.relative_url
+        name = self.request.url
         start_date = self.request.get('startDate')
         end_date = self.request.get('endDate')
         targets = self.request.get('target')
@@ -188,7 +198,7 @@ app = webapp2.WSGIApplication([
 ###############################################################################
 #                                Overlay                                      #
 ###############################################################################
-def GetOverlayFor(start_date, end_date, product, statistic, geometry):
+def GetOverlayFor(details_name, start_date, end_date, product, statistic, geometry):
     values = {}
     try:
         collection = GetOverlayImageCollection(start_date, end_date, product)
@@ -214,6 +224,8 @@ def GetOverlayFor(start_date, end_date, product, statistic, geometry):
             values['error'] = ErrorHandling(e)
     finally:
         print('Returning curr values')
+        if 'error' not in values.keys():
+            memcache.add(details_name, json.dumps(values), MEMCACHE_EXPIRATION)
         return values
 
 
@@ -317,13 +329,10 @@ def GetPointData(start_date, months, product, point_feature):
 #                                Graph For Regions.                           #
 ###############################################################################
 
-def GetGraphForRegionComparison(details_name, start_date, end_date, targets, area_type, method, product, timestep):
-    return
-
-
 def GetOverlayGraphSeries(details_name, start_date, end_date, targets, area_type, method, products, timestep):
     """Returns data to draw graphs with for single area"""
     json_data = memcache.get(details_name)
+    print('Getting For URL: ', details_name)
     # If we've cached details for this polygon, return them.
     if json_data is not None:
         print('From Cache:')
@@ -337,13 +346,13 @@ def GetOverlayGraphSeries(details_name, start_date, end_date, targets, area_type
 
         if method == 'area':
             if len(targets) > 1:  # Multiple area's means one product (build dictionary of Area's with their data)
-                print(targets)
-                print(products)
+                print('Going for multiple areas: {}, with product: {}'.format(targets, products))
                 details = {target: ComputeGraphSeries(start_date, end_date, GetAreaGeometry(target, area_type),
                                                       PRODUCTS[products[0]], timestep) for
                            target in targets}
             else:
-                region = GetAreaGeometry(targets, area_type)
+                print('Going for single area: {}, with products: {}'.format(targets, products))
+                region = GetAreaGeometry(targets[0], area_type)
                 details = {product: ComputeGraphSeries(start_date, end_date, region, PRODUCTS[product], timestep) for
                            product in products}
         elif method == 'shapefile':
@@ -384,7 +393,7 @@ def ComputeGraphSeries(start_date, end_date, region, product, timestep):
             product['scale'])
         return ee.Feature(None, {
             'system:time_start': m.format(
-                'DD-MM-YYYY' if timestep == 'day' else 'MM-YYYY' if timestep == 'month' else 'YYYY'),
+                'dd-MM-YYYY' if timestep == 'day' else 'MM-YYYY' if timestep == 'month' else 'YYYY'),
             'value': img.values().get(0)
         })
 
@@ -536,7 +545,7 @@ def Multiply(i, value):
     return i.multiply(value).copyProperties(i, ['system:time_start'])
 
 
-TRMM = ee.ImageCollection('TRMM/3B42').select('myanmar').map(
+TRMM = ee.ImageCollection('TRMM/3B42').select('precipitation').map(
     lambda i: Multiply(i, 3))
 MOD16 = ee.ImageCollection('MODIS/006/MOD16A2').select('ET').map(
     lambda i: Multiply(i, 0.1))

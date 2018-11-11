@@ -17,7 +17,7 @@ myanmar.boot = function (key) {
 myanmar.App = function () {
     this.map = this.createMap();
 
-
+    
     //Some styling (responsiveness of results panel)
     var results = $('.results');
     var settings = $('.settings');
@@ -146,6 +146,8 @@ myanmar.App.prototype.createOverlay = function () {
         } else {
             error.show().html('Map is being drawn... Please wait before drawing new map!');
             button.html(myanmar.App.OVERLAY_BASE_BUTTON_NAME);
+            console.log('Got back from server: ');
+            console.log(data);
             var mapId = data['mapid'];
             var token = data['token'];
             $('#legend-max span').html(myanmar.App.format(data['max']));
@@ -270,7 +272,7 @@ myanmar.App.prototype.showChart = function () {
     $('.results .title').show().text(this.chartTitle);
     var data = google.visualization.arrayToDataTable(this.chartData);
     var wrapper = new google.visualization.ChartWrapper({
-        chartType: 'LineChart',
+        chartType: this.chartData.length > 50 ? 'ScatterChart' : 'LineChart',
         dataTable: data,
         options: {
             title: 'Precipitation over time',
