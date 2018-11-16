@@ -98,6 +98,7 @@ class OverlayHandler(webapp2.RequestHandler):
         end_date = self.request.get('endDate')
         targets = self.request.get('target').split(',')
         product = self.request.get('product')
+        timestep = self.request.get('timestep')
         statistic = self.request.get('statistic')
         method = self.request.get('method')
         area_type = self.request.get('areaType')
@@ -122,7 +123,7 @@ class OverlayHandler(webapp2.RequestHandler):
             self.response.headers['Content-Type'] = 'application/json'
             self.response.out.write(json.dumps(values))
             return
-        values = GetOverlayFor(str(name), start_date, end_date, product, statistic, geometry)
+        values = GetOverlayFor(str(name), start_date, end_date, product, statistic, geometry, timestep)
         tries = 0
         while 'error' in values.keys() and values['error'] == 'Timeout, deadline exceeded' and tries < 4:
             tries = tries + 1
@@ -147,20 +148,10 @@ class GraphHandler(webapp2.RequestHandler):
             data = json.loads(targets)
             print(data)
             features = data['features']
-            content = GetPointsLineSeries(str(name), start_date, end_date, product, features)
-        # elif len(targets) > 1:
-        #     content = {}
-        #     for target in targets:
-        #         name = str(target) + str(area_type) + str(start_date) + str(end_date) + str(method) + str(
-        #             product) + str(timestep)
-        #         content[target] = GetOverlayGraphSeries(name, start_date, end_date, target, area_type, method,
-        #                                                 product.split(','),
-        #                                                 timestep)
-        #     print(content)
+            content = GetPointsLineSeries(str(name), start_date, end_date, product, features, timestep)
         else:
-            content = GetOverlayGraphSeries(str(name), start_date, end_date, targets.split(','), area_type, method,
-                                            product.split(","),
-                                            timestep)
+            content = GetGraphSeries(str(name), start_date, end_date, targets.split(','), area_type, method,
+                                     product.split(","), timestep)
         self.response.headers['Content-Type'] = 'application/json'
         self.response.out.write(content)
 
@@ -198,41 +189,58 @@ app = webapp2.WSGIApplication([
 ###############################################################################
 #                                Overlay                                      #
 ###############################################################################
-def GetOverlayFor(details_name, start_date, end_date, product, statistic, geometry):
+def GetOverlayFor(details_name, start_date, end_date, product_name, statistic, geometry, timestep):
     values = {}
-    try:
-        collection = GetOverlayImageCollection(start_date, end_date, product)
-        calced = GetCalculatedCollection(collection, statistic)
-        min_max = calced.reduce(ee.Reducer.minMax())
-        min = GetMin(min_max, geometry)
-        max = GetMax(min_max, geometry)
-        overlay = GetOverlayImage(calced, geometry, min, max)
-        data = overlay.getMapId()
-        values['mapid'] = data['mapid']
-        values['token'] = data['token']
-        values['min'] = min
-        values['max'] = max
-        values['download_url'] = overlay.getDownloadURL()
-    except (ee.EEException, HTTPException) as ex:
-        # Handle exceptions from the EE client library.
-        e = sys.exc_info()
-        print('type', type(ex).__name__)
-        print('ex args', ex.args)
-        if 'Deadline' in ex.args[0]:
-            values['error'] = 'Timeout, deadline exceeded'
-        else:
-            values['error'] = ErrorHandling(e)
-    finally:
-        print('Returning curr values')
-        if 'error' not in values.keys():
-            memcache.add(details_name, json.dumps(values), MEMCACHE_EXPIRATION)
-        return values
+    # try:
+    # collection = GetOverlayImageCollection(start_date, end_date, product)
+    # calced = GetCalculatedCollection(collection, statistic)
+    product = PRODUCTS[product_name]
+    image = GetOverlayCalculation(start_date, end_date, product, timestep, statistic)
+    min_max = image.reduce(ee.Reducer.minMax())
+    min = GetMin(min_max, geometry)
+    max = GetMax(min_max, geometry)
+    overlay = GetOverlayImage(image, geometry, min, max)
+    data = overlay.getMapId()
+    values['mapid'] = data['mapid']
+    values['token'] = data['token']
+    values['min'] = min
+    values['max'] = max
+    values['download_url'] = 'eel'  # overlay.getDownloadURL()
+    # except (ee.EEException, HTTPException) as ex:
+    #     # Handle exceptions from the EE client library.
+    #     e = sys.exc_info()
+    #     print('type', type(ex).__name__)
+    #     print('ex args', ex.args)
+    #     if 'Deadline' in ex.args[0]:
+    #         values['error'] = 'Timeout, deadline exceeded'
+    #     else:
+    #         values['error'] = ErrorHandling(e)
+    # finally:
+    print('Returning curr values')
+    if 'error' not in values.keys():
+        memcache.add(details_name, json.dumps(values), MEMCACHE_EXPIRATION)
+    return values
 
 
-def GetOverlayImageCollection(start_date, end_date, product_name):
+def GetOverlayCalculation(start_date, end_date, product, timestep, statistic):
     start_date = ee.Date(start_date)
     end_date = ee.Date(end_date)
-    product = PRODUCTS[product_name]
+    date = ee.List.sequence(0, end_date.difference(start_date, timestep).toInt())
+
+    def GetImageForDate(advance):
+        m = start_date.advance(advance, timestep)
+        img = product['collection'].filterDate(m, ee.Date(m).advance(1, timestep))
+        img_calced = GetCalculatedCollection(img, statistic)
+        return img_calced
+
+    multiplied = ee.ImageCollection.fromImages(date.map(GetImageForDate).flatten()).map(
+        lambda i: Multiply(i, product['multiply']))
+    return multiplied.median()
+
+
+def GetOverlayImageCollection(start_date, end_date, product):
+    start_date = ee.Date(start_date)
+    end_date = ee.Date(end_date)
     return product['collection'].filterDate(start_date, end_date)
 
 
@@ -245,6 +253,9 @@ def GetCalculatedCollection(images, statistic):
         return images.min()
     if statistic == 'max':
         return images.max()
+    else:
+        print('No statistics specified')
+        return images
 
 
 def GetMax(min_max, region):
@@ -257,79 +268,16 @@ def GetMin(min_max, region):
     return ee.Number(minmum.get('min')).getInfo()
 
 
-def GetOverlayImage(images, region, min, max):
+def GetOverlayImage(image, region, min, max):
     """Map for displaying summed up images of specified measurement"""
-    return images.clip(region).visualize(min=min, max=max, palette='FF00E7, FF2700, FDFF92, 0000FF, 000000')
-
-
-###############################################################################
-#                                Graph For Points.                            #
-###############################################################################
-
-def GetPointsLineSeries(details_name, start_date, end_date, product_name, point_features):
-    # Get from cache
-    json_data = memcache.get(details_name)
-    if json_data is not None:
-        print('From Cache:')
-        print(json_data)
-        return json_data
-
-    # Else build new dataset
-    start_date = ee.Date(start_date)
-    end_date = ee.Date(end_date)
-    months = ee.List.sequence(0, end_date.difference(start_date, 'month').toInt())
-    product = PRODUCTS[product_name]
-
-    point_features = map(ee.Feature, point_features)  # Map to ee.Feature (loads GeoJSON)
-    details = {}
-
-    try:
-        print('NOT CACHE:')
-        for point in point_features:
-            details[point.getInfo()['properties']['title']] = GetPointData(start_date, months, product, point)
-        print(details)
-        graph = OrderForGraph(details)
-        json_data = json.dumps(graph)
-        # Store the results in memcache.
-        memcache.add(details_name, json_data, MEMCACHE_EXPIRATION)
-    except (ee.EEException, HTTPException):
-        # Handle exceptions from the EE client library.
-        e = sys.exc_info()[0]
-        details['error'] = ErrorHandling(e)
-        json_data = json.dumps(details)
-    finally:
-        # Send the results to the browser.
-        print("Done getting JSON")
-        return json_data
-
-
-def GetPointData(start_date, months, product, point_feature):
-    # Create base months
-    def CalculateForMonth(count):
-        m = start_date.advance(count, 'month')
-        img = product['collection'].filterDate(m, ee.Date(m).advance(1, 'month')).sum().reduceRegion(
-            ee.Reducer.mean(), point_feature.geometry(),
-            product['scale'])
-        return ee.Feature(None, {
-            'system:time_start': m.format('MM-YYYY'),
-            'value': img.values().get(0)
-        })
-
-    chart_data = months.map(CalculateForMonth).getInfo()
-
-    def ExtractMean(feature):
-        return [feature['properties']['system:time_start'], feature['properties']['value']]
-
-    chart_data = map(ExtractMean, chart_data)
-    print(chart_data)
-    return chart_data
+    return image.clip(region).visualize(min=min, max=max, palette='FF00E7, FF2700, FDFF92, 0000FF, 000000')
 
 
 ###############################################################################
 #                                Graph For Regions.                           #
 ###############################################################################
 
-def GetOverlayGraphSeries(details_name, start_date, end_date, targets, area_type, method, products, timestep):
+def GetGraphSeries(details_name, start_date, end_date, targets, area_type, method, products, timestep):
     """Returns data to draw graphs with for single area"""
     json_data = memcache.get(details_name)
     print('Getting For URL: ', details_name)
@@ -370,9 +318,11 @@ def GetOverlayGraphSeries(details_name, start_date, end_date, targets, area_type
         json_data = json.dumps(graph)
         # Store the results in memcache.
         memcache.add(details_name, json_data, MEMCACHE_EXPIRATION)
-    except (ee.EEException, HTTPException):
+    except (ee.EEException, HTTPException) as ex:
         # Handle exceptions from the EE client library.
         e = sys.exc_info()
+        print('type', type(ex).__name__)
+        print('ex args', ex.args)
         details['error'] = ErrorHandling(e)
         json_data = json.dumps(details)
     finally:
@@ -388,7 +338,9 @@ def ComputeGraphSeries(start_date, end_date, region, product, timestep):
     # Create base months
     def CalculateTimeStep(count):
         m = start_date.advance(count, timestep)
-        img = product['collection'].filterDate(m, ee.Date(m).advance(1, timestep)).sum().reduceRegion(
+        img_col = product['collection'].filterDate(m, ee.Date(m).advance(1, timestep))
+        img_multiplied = img_col.map(lambda i: Multiply(i, product['multiply'])).sum()
+        img = img_multiplied.reduceRegion(
             ee.Reducer.mean(), region,
             product['scale'])
         return ee.Feature(None, {
@@ -398,6 +350,71 @@ def ComputeGraphSeries(start_date, end_date, region, product, timestep):
         })
 
     chart_data = months.map(CalculateTimeStep).getInfo()
+
+    def ExtractMean(feature):
+        return [feature['properties']['system:time_start'], feature['properties']['value']]
+
+    chart_data = map(ExtractMean, chart_data)
+    print(chart_data)
+    return chart_data
+
+
+###############################################################################
+#                                Graph For Points.                            #
+###############################################################################
+
+def GetPointsLineSeries(details_name, start_date, end_date, product_name, point_features, timestep):
+    # Get from cache
+    json_data = memcache.get(details_name)
+    if json_data is not None:
+        print('From Cache:')
+        print(json_data)
+        return json_data
+
+    # Else build new dataset
+    start_date = ee.Date(start_date)
+    end_date = ee.Date(end_date)
+    dates = ee.List.sequence(0, end_date.difference(start_date, timestep).toInt())
+    product = PRODUCTS[product_name]
+
+    point_features = map(ee.Feature, point_features)  # Map to ee.Feature (loads GeoJSON)
+    details = {}
+
+    try:
+        print('NOT CACHE:')
+        for point in point_features:
+            details[point.getInfo()['properties']['title']] = GetPointData(start_date, dates, product, point, timestep)
+        print(details)
+        graph = OrderForGraph(details)
+        json_data = json.dumps(graph)
+        # Store the results in memcache.
+        memcache.add(details_name, json_data, MEMCACHE_EXPIRATION)
+    except (ee.EEException, HTTPException):
+        # Handle exceptions from the EE client library.
+        e = sys.exc_info()[0]
+        details['error'] = ErrorHandling(e)
+        json_data = json.dumps(details)
+    finally:
+        # Send the results to the browser.
+        print("Done getting JSON")
+        return json_data
+
+
+def GetPointData(start_date, months, product, point_feature, timestep):
+    # Create base months
+    def CalculateForMonth(count):
+        m = start_date.advance(count, timestep)
+        img_col = product['collection'].filterDate(m, ee.Date(m).advance(1, timestep))
+        img_multiplied = img_col.map(lambda i: Multiply(i, product['multiply'])).sum()
+        img = img_multiplied.reduceRegion(
+            ee.Reducer.mean(), point_feature.geometry(),
+            product['scale'])
+        return ee.Feature(None, {
+            'system:time_start': m.format('MM-YYYY'),
+            'value': img.values().get(0) * product['multiply']
+        })
+
+    chart_data = months.map(CalculateForMonth).getInfo()
 
     def ExtractMean(feature):
         return [feature['properties']['system:time_start'], feature['properties']['value']]
@@ -450,7 +467,7 @@ def GetMultiAreaGeometry(names, area_type):
 
     features = ee.FeatureCollection(path)
     areas = features.filter(ee.Filter.inList(stdt, names))
-    return areas.geometry()
+    return areas
     # From JSON VV
     # path = os.path.join(os.path.split(__file__)[0], path)
     # with open(path) as f:
@@ -545,36 +562,36 @@ def Multiply(i, value):
     return i.multiply(value).copyProperties(i, ['system:time_start'])
 
 
-TRMM = ee.ImageCollection('TRMM/3B42').select('precipitation').map(
-    lambda i: Multiply(i, 3))
-MOD16 = ee.ImageCollection('MODIS/006/MOD16A2').select('ET').map(
-    lambda i: Multiply(i, 0.1))
+TRMM = ee.ImageCollection('TRMM/3B42').select('precipitation')
 PERSIANN = ee.ImageCollection('NOAA/PERSIANN-CDR')
 CHIRPS = ee.ImageCollection('UCSB-CHG/CHIRPS/DAILY')
-CFSV2 = ee.ImageCollection('NOAA/CFSV2/FOR6H').select('Precipitation_rate_surface_6_Hour_Average').map(
-    lambda i: Multiply(i, 60 * 60 * 6))
-GLDAS = ee.ImageCollection('NASA/GLDAS/V021/NOAH/G025/T3H').select('Rainf_tavg').map(
-    lambda i: Multiply(i, 60 * 60 * 3))
+CFSV2 = ee.ImageCollection('NOAA/CFSV2/FOR6H').select('Precipitation_rate_surface_6_Hour_Average')
+GLDAS = ee.ImageCollection('NASA/GLDAS/V021/NOAH/G025/T3H').select('Rainf_tavg')
 
 PRODUCTS = {
     'CHIRPS': {
         'collection': CHIRPS,
-        'scale': 1000
+        'scale': 1000,
+        'multiply': 1
     },
     'PERSIANN': {
         'collection': PERSIANN,
-        'scale': 5000
+        'scale': 5000,
+        'multiply': 1
     },
     'TRMM': {
         'collection': TRMM,
-        'scale': 30000
+        'scale': 30000,
+        'multiply': 3
     },
     'CFSV2': {
         'collection': CFSV2,
-        'scale': 30000
+        'scale': 30000,
+        'multiply': 60 * 60 * 6
     },
     'GLDAS': {
         'collection': GLDAS,
-        'scale': 30000
+        'scale': 30000,
+        'multiply': 60 * 60 * 3
     }
 }

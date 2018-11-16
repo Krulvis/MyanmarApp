@@ -7,7 +7,7 @@ statistics.reset = function (type) {
         //Should be removed from all
     } else if (type === 'overlay') {
         switch (myanmar.instance.selectionMethod) {
-            case 'country':
+            case 'area':
                 this.addTo(options);
                 break;
             case 'shapefile':

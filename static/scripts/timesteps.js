@@ -16,7 +16,7 @@ timesteps.reset = function (type) {
         }
     } else if (type === 'overlay') {
         switch (myanmar.instance.selectionMethod) {
-            case 'country':
+            case 'area':
                 this.addTo(type, options);
                 break;
             case 'shapefile':
@@ -39,7 +39,7 @@ timesteps.removeFrom = function (element) {
 };
 
 timesteps.html = function (type) {
-    var disabled = type === 'overlay' ? 'disabled' : '';
+    var disabled = '';//type === 'overlay' ? 'disabled' : '';
     var checked = type === 'overlay' ? 'checked' : '';
     return '<div class="timesteps-container form-group">\n' +
         '                            <label class="bold" for="timesteps">Choose Time Step</label>\n' +

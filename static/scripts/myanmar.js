@@ -17,7 +17,7 @@ myanmar.boot = function (key) {
 myanmar.App = function () {
     this.map = this.createMap();
 
-    
+
     //Some styling (responsiveness of results panel)
     var results = $('.results');
     var settings = $('.settings');
@@ -116,8 +116,8 @@ myanmar.App.prototype.createOverlay = function () {
     const downloadImg = $('.download-img');
     const downloadCSV = $('.download-csv');
     const product = this.getProduct();
-    const timestep = 'day';//this.getTimestep();
-    const statistic = 'sum';//this.getStatistic();
+    const timestep = this.getTimestep();
+    const statistic = this.getStatistic();
     const target = this.getTarget();
     const areaType = area.getSelectedAreaType();
 
