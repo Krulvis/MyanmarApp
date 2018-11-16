@@ -75,6 +75,10 @@ products.html = function (radio) {
         '                                    <input type="' + radio + '" id="GLDAS" name="product" class="custom-control-input">\n' +
         '                                    <label class="custom-control-label" for="GLDAS">GLDAS</label>\n' +
         '                                </div>\n' +
+        '                                <div class="custom-control custom-' + radio + ' custom-control-inline">\n' +
+        '                                    <input type="' + radio + '" id="TRMM" name="product" class="custom-control-input">\n' +
+        '                                    <label class="custom-control-label" for="TRMM">TRMM</label>\n' +
+        '                                </div>\n' +
         '                            </div>\n' +
         '                        </div>';
 };

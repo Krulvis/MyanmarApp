@@ -148,19 +148,10 @@ class GraphHandler(webapp2.RequestHandler):
             print(data)
             features = data['features']
             content = GetPointsLineSeries(str(name), start_date, end_date, product, features)
-        # elif len(targets) > 1:
-        #     content = {}
-        #     for target in targets:
-        #         name = str(target) + str(area_type) + str(start_date) + str(end_date) + str(method) + str(
-        #             product) + str(timestep)
-        #         content[target] = GetOverlayGraphSeries(name, start_date, end_date, target, area_type, method,
-        #                                                 product.split(','),
-        #                                                 timestep)
-        #     print(content)
         else:
-            content = GetOverlayGraphSeries(str(name), start_date, end_date, targets.split(','), area_type, method,
-                                            product.split(","),
-                                            timestep)
+            content = GetAreaGraphSeries(str(name), start_date, end_date, targets.split(','), area_type, method,
+                                         product.split(","),
+                                         timestep)
         self.response.headers['Content-Type'] = 'application/json'
         self.response.out.write(content)
 
@@ -229,6 +220,20 @@ def GetOverlayFor(details_name, start_date, end_date, product, statistic, geomet
         return values
 
 
+def GetOverlayCalculation(start_date, end_date, product, region, timestep, statistic):
+    start_date = ee.Date(start_date)
+    end_date = ee.Date(end_date)
+    date = ee.List.sequence(0, end_date.difference(start_date, timestep).toInt())
+
+    def GetImageForDate(advance):
+        m = start_date.advance(advance, timestep)
+        img = product['collection'].filterDate(m, ee.Date(m).advance(1, timestep)).reduceRegion(
+            ee.Reducer.mean(), region,
+            product['scale'])
+        return GetCalculatedCollection(img, statistic)
+
+    return date.map(GetImageForDate).flatten()
+
 def GetOverlayImageCollection(start_date, end_date, product_name):
     start_date = ee.Date(start_date)
     end_date = ee.Date(end_date)
@@ -262,6 +267,86 @@ def GetOverlayImage(images, region, min, max):
     return images.clip(region).visualize(min=min, max=max, palette='FF00E7, FF2700, FDFF92, 0000FF, 000000')
 
 
+###############################################################################
+#                                Graph For Regions.                           #
+###############################################################################
+
+def GetAreaGraphSeries(details_name, start_date, end_date, targets, area_type, method, products, timestep):
+    """Returns data to draw graphs with for single area"""
+    json_data = memcache.get(details_name)
+    print('Getting For URL: ', details_name)
+    # If we've cached details for this polygon, return them.
+    if json_data is not None:
+        print('From Cache:')
+        print(json_data)
+        return json_data
+
+    details = {}
+    try:
+        print('NOT CACHE:')
+        # Else build new dictionary
+        if method == 'area':
+            if len(targets) > 1:  # Multiple area's means one product (build dictionary of Area's with their data)
+                print('Going for multiple areas: {}, with product: {}'.format(targets, products))
+                details = {target: ComputeGraphSeries(start_date, end_date, GetAreaGeometry(target, area_type),
+                                                      PRODUCTS[products[0]], timestep) for
+                           target in targets}
+            else:
+                print('Going for single area: {}, with products: {}'.format(targets, products))
+                region = GetAreaGeometry(targets[0], area_type)
+                details = {product: ComputeGraphSeries(start_date, end_date, region, PRODUCTS[product], timestep) for
+                           product in products}
+        elif method == 'shapefile':
+            region = GetShapeFileFeature(targets)
+            details = {product: ComputeGraphSeries(start_date, end_date, region, PRODUCTS[product], timestep) for
+                       product in products}
+        else:  # Coordinate
+            json_data = json.loads(targets)
+            print(json_data)
+            region = ee.Feature(json_data)
+            details = {product: ComputeGraphSeries(start_date, end_date, region, PRODUCTS[product], timestep) for
+                       product in products}
+        print(details)
+        graph = OrderForGraph(details)
+        json_data = json.dumps(graph)
+        # Store the results in memcache.
+        memcache.add(details_name, json_data, MEMCACHE_EXPIRATION)
+    except (ee.EEException, HTTPException):
+        # Handle exceptions from the EE client library.
+        e = sys.exc_info()
+        details['error'] = ErrorHandling(e)
+        json_data = json.dumps(details)
+    finally:
+        # Send the results to the browser.
+
+        return json_data
+
+
+def ComputeGraphSeries(start_date, end_date, region, product, timestep):
+    start_date = ee.Date(start_date)
+    end_date = ee.Date(end_date)
+    months = ee.List.sequence(0, end_date.difference(start_date, timestep).toInt())
+
+    # Create base months
+    def CalculateTimeStep(count):
+        m = start_date.advance(count, timestep)
+        img = product['collection'].filterDate(m, ee.Date(m).advance(1, timestep)).sum().reduceRegion(
+            ee.Reducer.mean(), region,
+            product['scale'])
+        return ee.Feature(None, {
+            'system:time_start': m.format(
+                'dd-MM-YYYY' if timestep == 'day' else 'MM-YYYY' if timestep == 'month' else 'YYYY'),
+            'value': img.values().get(0)
+        })
+
+    chart_data = months.map(CalculateTimeStep).getInfo()
+
+    def ExtractMean(feature):
+        return [feature['properties']['system:time_start'], feature['properties']['value']]
+
+    chart_data = map(ExtractMean, chart_data)
+    print(chart_data)
+    return chart_data
 ###############################################################################
 #                                Graph For Points.                            #
 ###############################################################################
@@ -323,89 +408,6 @@ def GetPointData(start_date, months, product, point_feature):
     chart_data = map(ExtractMean, chart_data)
     print(chart_data)
     return chart_data
-
-
-###############################################################################
-#                                Graph For Regions.                           #
-###############################################################################
-
-def GetOverlayGraphSeries(details_name, start_date, end_date, targets, area_type, method, products, timestep):
-    """Returns data to draw graphs with for single area"""
-    json_data = memcache.get(details_name)
-    print('Getting For URL: ', details_name)
-    # If we've cached details for this polygon, return them.
-    if json_data is not None:
-        print('From Cache:')
-        print(json_data)
-        return json_data
-
-    details = {}
-    try:
-        print('NOT CACHE:')
-        # Else build new dictionary
-
-        if method == 'area':
-            if len(targets) > 1:  # Multiple area's means one product (build dictionary of Area's with their data)
-                print('Going for multiple areas: {}, with product: {}'.format(targets, products))
-                details = {target: ComputeGraphSeries(start_date, end_date, GetAreaGeometry(target, area_type),
-                                                      PRODUCTS[products[0]], timestep) for
-                           target in targets}
-            else:
-                print('Going for single area: {}, with products: {}'.format(targets, products))
-                region = GetAreaGeometry(targets[0], area_type)
-                details = {product: ComputeGraphSeries(start_date, end_date, region, PRODUCTS[product], timestep) for
-                           product in products}
-        elif method == 'shapefile':
-            region = GetShapeFileFeature(targets)
-            details = {product: ComputeGraphSeries(start_date, end_date, region, PRODUCTS[product], timestep) for
-                       product in products}
-        else:  # Coordinate
-            json_data = json.loads(targets)
-            print(json_data)
-            region = ee.Feature(json_data)
-            details = {product: ComputeGraphSeries(start_date, end_date, region, PRODUCTS[product], timestep) for
-                       product in products}
-        print(details)
-        graph = OrderForGraph(details)
-        json_data = json.dumps(graph)
-        # Store the results in memcache.
-        memcache.add(details_name, json_data, MEMCACHE_EXPIRATION)
-    except (ee.EEException, HTTPException):
-        # Handle exceptions from the EE client library.
-        e = sys.exc_info()
-        details['error'] = ErrorHandling(e)
-        json_data = json.dumps(details)
-    finally:
-        # Send the results to the browser.
-        return json_data
-
-
-def ComputeGraphSeries(start_date, end_date, region, product, timestep):
-    start_date = ee.Date(start_date)
-    end_date = ee.Date(end_date)
-    months = ee.List.sequence(0, end_date.difference(start_date, timestep).toInt())
-
-    # Create base months
-    def CalculateTimeStep(count):
-        m = start_date.advance(count, timestep)
-        img = product['collection'].filterDate(m, ee.Date(m).advance(1, timestep)).sum().reduceRegion(
-            ee.Reducer.mean(), region,
-            product['scale'])
-        return ee.Feature(None, {
-            'system:time_start': m.format(
-                'dd-MM-YYYY' if timestep == 'day' else 'MM-YYYY' if timestep == 'month' else 'YYYY'),
-            'value': img.values().get(0)
-        })
-
-    chart_data = months.map(CalculateTimeStep).getInfo()
-
-    def ExtractMean(feature):
-        return [feature['properties']['system:time_start'], feature['properties']['value']]
-
-    chart_data = map(ExtractMean, chart_data)
-    print(chart_data)
-    return chart_data
-
 
 ###############################################################################
 #                                   Helpers.                                  #

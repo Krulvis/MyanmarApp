@@ -17,7 +17,7 @@ myanmar.boot = function (key) {
 myanmar.App = function () {
     this.map = this.createMap();
 
-    
+
     //Some styling (responsiveness of results panel)
     var results = $('.results');
     var settings = $('.settings');
@@ -200,7 +200,7 @@ myanmar.App.prototype.createGraph = function () {
             error.show().html(data['error']);
         } else {
             button.html(myanmar.App.GRAPH_BASE_BUTTON_NAME);
-            this.chartTitle = this.selectionMethod === 'country' ? this.selectedCountry.getProperty('Country') : this.selectionMethod === 'coordinate' ? 'Markers' : 'ShapeFile';
+            this.chartTitle = this.selectionMethod === 'area' ? area.getSelectedAreas() : this.selectionMethod === 'coordinate' ? 'Markers' : 'ShapeFile';
             console.log(data);
             downloadCSV.show();
             this.chartData = data;
@@ -272,14 +272,14 @@ myanmar.App.prototype.showChart = function () {
     $('.results .title').show().text(this.chartTitle);
     var data = google.visualization.arrayToDataTable(this.chartData);
     var wrapper = new google.visualization.ChartWrapper({
-        chartType: this.chartData.length > 50 ? 'ScatterChart' : 'LineChart',
+        chartType: 'LineChart',//this.chartData.length > 50 ? 'ScatterChart' : 'LineChart',
         dataTable: data,
         options: {
             title: 'Precipitation over time',
             //curveType: 'function',
             legend: {position: 'bottom'},
             titleTextStyle: {fontName: 'Roboto'},
-            hAxis: {title: 'Time'},
+            hAxis: {title: 'Time', textPosition: 'none'},
             vAxis: {title: 'Precipitation (mm)'}
         }
     });
