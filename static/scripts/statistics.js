@@ -4,7 +4,7 @@ statistics.reset = function (type) {
     var options = $('.create-options');
     this.removeFrom(options);
     if (type === 'graph') {
-        //Should be removed from all
+        this.addTo(options);
     } else if (type === 'overlay') {
         switch (myanmar.instance.selectionMethod) {
             case 'area':
@@ -12,8 +12,6 @@ statistics.reset = function (type) {
                 break;
             case 'shapefile':
                 this.addTo(options);
-                break;
-            case 'coordinate':
                 break;
         }
     }
