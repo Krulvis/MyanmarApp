@@ -157,10 +157,14 @@ body,
 }
 
 /* Small screens. */
-@media (max-height: 600px) {
+@media (max-height: 550px) {
     .futurewater .settings {
         top: 0;
         max-height: 100%;
+    }
+
+    .header-container {
+        display: none;
     }
 }
 
