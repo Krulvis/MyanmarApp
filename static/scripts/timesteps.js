@@ -12,6 +12,7 @@ timesteps.reset = function (type) {
                 this.addTo(type, options);
                 break;
             case 'coordinate':
+                this.addTo(type, options);
                 break;
         }
     } else if (type === 'overlay') {
@@ -21,8 +22,6 @@ timesteps.reset = function (type) {
                 break;
             case 'shapefile':
                 this.addTo(type, options);
-                break;
-            case 'coordinate':
                 break;
         }
     }

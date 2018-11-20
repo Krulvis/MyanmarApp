@@ -36,9 +36,9 @@
     <link rel="stylesheet" href="/static/css/header.css">
 
     <!-- Our custom JavaScript for Earth Engine App. -->
-    <script src="/static/scripts/markers.js"></script>
     <script src="/static/scripts/output.js"></script>
     <script src="/static/scripts/myanmar.js"></script>
+    <script src="/static/scripts/markers.js"></script>
     <script src="/static/scripts/area.js"></script>
     <script src="/static/scripts/products.js"></script>
     <script src="/static/scripts/statistics.js"></script>
@@ -52,10 +52,14 @@
 <div class="header-container row">
     <div class="extra col-md-5 row">
         <div class="buttons col-md-3">
-            <div class="contact"><a href="https://www.futurewater.eu/about-us/contact-2/"><i
-                    class="far fa-envelope"></i> Contact</a></div>
-            <div class="information" data-toggle="collapse"
-                 data-target="#information"><i class="fas fa-info-circle"></i> Information
+            <div class="links">
+                <div class="contact">
+                    <a href="https://www.futurewater.eu/about-us/contact-2/">
+                        <i class="far fa-envelope"></i> Contact</a></div>
+                <div class="information" data-toggle="collapse" data-target="#information">
+                    <i class="fas fa-info-circle"></i>
+                    Information
+                </div>
             </div>
         </div>
         <div class="col-md-9">
@@ -189,8 +193,7 @@
                             <table class="table table-striped">
                                 <thead>
                                 <tr>
-                                    <th>Lat</th>
-                                    <th>Lng</th>
+                                    <th>LatLng</th>
                                     <th>Title</th>
                                     <th>Remove</th>
                                 </tr>

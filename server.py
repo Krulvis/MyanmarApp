@@ -148,7 +148,7 @@ class GraphHandler(webapp2.RequestHandler):
             data = json.loads(targets)
             print(data)
             features = data['features']
-            content = GetPointsLineSeries(str(name), start_date, end_date, product, features, timestep)
+            content = GetPointsLineSeries(str(name), start_date, end_date, product.split(","), features, timestep)
         else:
             content = GetGraphSeries(str(name), start_date, end_date, targets.split(','), area_type, method,
                                      product.split(","), timestep)
