@@ -113,21 +113,23 @@ class OverlayHandler(webapp2.RequestHandler):
             self.response.out.write(json_data)
             return
         if method == 'area':
-            geometry = GetMultiAreaGeometry(targets, area_type)
+            features = GetMultiAreaFeatures(targets, area_type)
             # values['center'] = feature.centroid().getInfo()['coordinates']
         elif method == 'shapefile':
-            geometry = GetShapeFileFeature(targets)
+            features = GetShapeFileFeature(targets)
             # values['center'] = feature.centroid().getInfo()['coordinates']
         else:
             values['error'] = 'Did not set correct method!'
             self.response.headers['Content-Type'] = 'application/json'
             self.response.out.write(json.dumps(values))
             return
-        values = GetOverlayFor(str(name), start_date, end_date, product, statistic, geometry, timestep)
+        values = GetOverlayFor(start_date, end_date, product, statistic, features, timestep)
         tries = 0
         while 'error' in values.keys() and values['error'] == 'Timeout, deadline exceeded' and tries < 4:
             tries = tries + 1
-            values = GetOverlayFor(str(name), start_date, end_date, product, statistic, geometry)
+            values = GetOverlayFor(start_date, end_date, product, statistic, features, timestep)
+        if 'error' not in values.keys():
+            memcache.add(name, json.dumps(values), MEMCACHE_EXPIRATION)
         self.response.headers['Content-Type'] = 'application/json'
         self.response.out.write(json.dumps(values))
 
@@ -190,25 +192,26 @@ app = webapp2.WSGIApplication([
 ###############################################################################
 #                                Overlay                                      #
 ###############################################################################
-def GetOverlayFor(details_name, start_date, end_date, product_name, statistic, geometry, timestep):
+def GetOverlayFor(start_date, end_date, product_name, statistic, target_feature, timestep):
     values = {}
     # try:
     # collection = GetOverlayImageCollection(start_date, end_date, product)
     # calced = GetCalculatedCollection(collection, statistic)
     product = PRODUCTS[product_name]
-    image = GetOverlayCalculation(start_date, end_date, product, timestep, statistic)
-    min_max = image.reduceRegion(ee.Reducer.minMax(), geometry, product['scale'])
-    min = GetMin(min_max, geometry)
-    max = GetMax(min_max, geometry)
+    image = GetOverlayCalculation(start_date, end_date, product, target_feature, timestep, statistic)
+    min_max = image.reduceRegion(ee.Reducer.minMax(), target_feature, product['scale'])
+    min = GetMin(min_max, target_feature)
+    max = GetMax(min_max, target_feature)
     print('Min', min)
     print('Max', max)
-    overlay = GetOverlayImage(image, geometry, min, max, statistic)
+    overlay = GetOverlayImage(image, target_feature, min, max, statistic)
     data = overlay.getMapId()
     values['mapid'] = data['mapid']
     values['token'] = data['token']
     values['min'] = min
     values['max'] = max
-    values['download_url'] = overlay.getDownloadURL()
+    values['download_url'] = overlay.getDownloadURL(
+        {'name': 'ImageOverlay', 'region': target_feature.geometry().bounds().getInfo()['coordinates'], 'scale': product['scale']})
     # except (ee.EEException, HTTPException) as ex:
     #     # Handle exceptions from the EE client library.
     #     e = sys.exc_info()
@@ -220,19 +223,18 @@ def GetOverlayFor(details_name, start_date, end_date, product_name, statistic, g
     #         values['error'] = ErrorHandling(e)
     # finally:
     print('Returning curr values')
-    if 'error' not in values.keys():
-        memcache.add(details_name, json.dumps(values), MEMCACHE_EXPIRATION)
+
     return values
 
 
-def GetOverlayCalculation(start_date, end_date, product, timestep, statistic):
+def GetOverlayCalculation(start_date, end_date, product, features, timestep, statistic):
     start_date = ee.Date(start_date)
     end_date = ee.Date(end_date)
     date = ee.List.sequence(0, end_date.difference(start_date, timestep).toInt())
 
     def GetImageForDate(advance):
         m = start_date.advance(advance, timestep)
-        img = product['collection'].filterDate(m, ee.Date(m).advance(1, timestep))
+        img = product['collection'].filterDate(m, ee.Date(m).advance(1, timestep)).filterBounds(features.geometry())
         img_calced = img.sum()
         return img_calced
 
@@ -261,8 +263,8 @@ def GetMin(min_max, region):
 
 def GetOverlayImage(image, region, min, max, statistic):
     """Map for displaying summed up images of specified measurement"""
-    # return image.clip(region).visualize(min=min, max=max, palette='FF00E7, FF2700, FDFF92, 0000FF, 000000')
-    return image.reduceRegion(GetReducer(statistic), region).toImage().visualize(min=min, max=max, palette='FF00E7, FF2700, FDFF92, 0000FF, 000000')
+    return image.clip(region).visualize(min=min, max=max, palette='FF00E7, FF2700, FDFF92, 0000FF, 000000')
+    # return image.reduceRegion(GetReducer(statistic), region).toImage().visualize(min=min, max=max, palette='FF00E7, FF2700, FDFF92, 0000FF, 000000')
 
 
 ###############################################################################
@@ -469,7 +471,7 @@ def GetAreaGeometry(name, area_type):
     return areas.geometry()
 
 
-def GetMultiAreaGeometry(names, area_type):
+def GetMultiAreaFeatures(names, area_type):
     """Returns an ee.Geometry for the area's with given names."""
     if area_type == 'regions':
         stdt = 'ST'
