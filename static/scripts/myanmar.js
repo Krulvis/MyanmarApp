@@ -324,6 +324,8 @@ myanmar.App.prototype.addOverlay = function (eeMapId, eeToken) {
  * Removes previously added Overlay Map Types (Used to remove Map Overlay Rainfall)
  */
 myanmar.App.prototype.clearOverlays = function () {
+    $('#legend-min span').html(0);
+    $('#legend-max span').html(0);
     var overlays = this.map.overlayMapTypes;
     while (overlays[0]) {
         overlays.pop().setMap(null);

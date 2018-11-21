@@ -194,37 +194,37 @@ app = webapp2.WSGIApplication([
 ###############################################################################
 def GetOverlayFor(start_date, end_date, product_name, statistic, target_feature, timestep):
     values = {}
-    # try:
-    # collection = GetOverlayImageCollection(start_date, end_date, product)
-    # calced = GetCalculatedCollection(collection, statistic)
-    product = PRODUCTS[product_name]
-    image = GetOverlayCalculation(start_date, end_date, product, target_feature, timestep, statistic)
-    min_max = image.reduceRegion(ee.Reducer.minMax(), target_feature, product['scale'])
-    min = GetMin(min_max, target_feature)
-    max = GetMax(min_max, target_feature)
-    print('Min', min)
-    print('Max', max)
-    overlay = GetOverlayImage(image, target_feature, min, max, statistic)
-    data = overlay.getMapId()
-    values['mapid'] = data['mapid']
-    values['token'] = data['token']
-    values['min'] = min
-    values['max'] = max
-    values['download_url'] = overlay.getDownloadURL(
-        {'name': 'ImageOverlay', 'region': target_feature.geometry().bounds().getInfo()['coordinates'], 'scale': product['scale']})
-    # except (ee.EEException, HTTPException) as ex:
-    #     # Handle exceptions from the EE client library.
-    #     e = sys.exc_info()
-    #     print('type', type(ex).__name__)
-    #     print('ex args', ex.args)
-    #     if 'Deadline' in ex.args[0]:
-    #         values['error'] = 'Timeout, deadline exceeded'
-    #     else:
-    #         values['error'] = ErrorHandling(e)
-    # finally:
-    print('Returning curr values')
-
-    return values
+    try:
+        # collection = GetOverlayImageCollection(start_date, end_date, product)
+        # calced = GetCalculatedCollection(collection, statistic)
+        product = PRODUCTS[product_name]
+        image = GetOverlayCalculation(start_date, end_date, product, target_feature, timestep, statistic)
+        min_max = image.reduceRegion(ee.Reducer.minMax(), target_feature, product['scale'])
+        min = GetMin(min_max, target_feature)
+        max = GetMax(min_max, target_feature)
+        print('Min', min)
+        print('Max', max)
+        overlay = GetOverlayImage(image, target_feature, min, max, statistic)
+        data = overlay.getMapId()
+        values['mapid'] = data['mapid']
+        values['token'] = data['token']
+        values['min'] = min
+        values['max'] = max
+        values['download_url'] = overlay.getDownloadURL(
+            {'name': 'ImageOverlay', 'region': target_feature.geometry().bounds().getInfo()['coordinates'],
+             'scale': product['scale']})
+    except (ee.EEException, HTTPException) as ex:
+        # Handle exceptions from the EE client library.
+        e = sys.exc_info()
+        print('type', type(ex).__name__)
+        print('ex args', ex.args)
+        if 'Deadline' in ex.args[0]:
+            values['error'] = 'Timeout, deadline exceeded'
+        else:
+            values['error'] = ErrorHandling(e)
+    finally:
+        print('Returning curr values')
+        return values
 
 
 def GetOverlayCalculation(start_date, end_date, product, features, timestep, statistic):
