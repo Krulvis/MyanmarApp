@@ -373,13 +373,14 @@ def GetPointsLineSeries(details_name, start_date, end_date, products, point_feat
     else:
         product = PRODUCTS[products[0]]
         print('Multiple Features with product: ', product)
-        # details = {
-        #     point.getInfo()['properties']['title']: ComputeGraphSeries(start_date, end_date, point.geometry(),
-        #                                                                PRODUCTS[products[0]], timestep, statistic)
-        #     for point in point_features}
-        for point in point_features:
-            details[point.getInfo()['properties']['title']] = GetPointData(start_date, end_date, product,
-                                                                           point, timestep, statistic)
+        details = {
+            point.getInfo()['properties']['title']: ComputeGraphSeries(start_date, end_date, point.geometry(),
+                                                                       PRODUCTS[products[0]], timestep, statistic)
+            for point in point_features}
+        # for point in point_features:
+        #     details[point.getInfo()['properties']['title']] = GetPointData(start_date, end_date, product,
+        #                                                                    point, timestep, statistic)
+    print(details)
     graph = OrderForGraph(details)
     json_data = json.dumps(graph)
     # Store the results in memcache.
@@ -409,11 +410,12 @@ def GetPointData(start_date, end_date, product, point_feature, timestep, statist
         img = product['collection'].filterDate(m, ee.Date(m).advance(1, timestep)).sum().reduceRegion(
             ee.Reducer.mean(), region,
             product['scale'])
+        print(img)
         feature = ee.Feature(None, {
             'system:time_start': m.format('MM-YYYY'),
             'value': img.values().get(0)
         })
-        print(feature.getInfo())
+        # print(feature.getInfo())
         return feature
 
     chart_data = dates.map(CalculateForTimestep).getInfo()

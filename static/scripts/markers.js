@@ -55,6 +55,9 @@ markers.addMarkerFromForm = function () {
  * Add marker to List and Table
  */
 markers.addMarkerFromLng = function (latLng, title) {
+    if (title === '') {
+        title = myanmar.instance.markers.length.toString();
+    }
     var marker = new google.maps.Marker({
         position: latLng,
         map: myanmar.instance.map,
@@ -94,7 +97,7 @@ markers.getJSON = function () {
         };
         temp.properties.title = marker.getTitle();
         var position = marker.getPosition();
-        temp.geometry.coordinates = [position.lat(), position.lng()];
+        temp.geometry.coordinates = [position.lng(), position.lat()];
         return temp;
     });
     var data = {'features': features};
