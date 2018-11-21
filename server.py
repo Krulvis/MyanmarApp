@@ -331,7 +331,7 @@ def ComputeGraphSeries(start_date, end_date, region, product, timestep, statisti
         img_col = product['collection'].filterDate(m, ee.Date(m).advance(1, timestep))
         img_multiplied = GetCalculatedCollection(img_col.map(lambda i: Multiply(i, product['multiply'])), statistic)
         img = img_multiplied.reduceRegion(
-            ee.Reducer.mean(), region,
+            GetReducer(statistic), region,
             product['scale'])
         return ee.Feature(None, {
             'system:time_start': m.format(
@@ -361,58 +361,62 @@ def GetPointsLineSeries(details_name, start_date, end_date, products, point_feat
         print(json_data)
         return json_data
 
-    # Else build new dataset
-    start_date = ee.Date(start_date)
-    end_date = ee.Date(end_date)
-    # dates = ee.List.sequence(0, end_date.difference(start_date, timestep).toInt())
-
     point_features = map(ee.Feature, point_features)  # Map to ee.Feature (loads GeoJSON)
     details = {}
 
-    try:
-        print('NOT CACHE:')
-        if len(products) > 1:
-            details = {product: ComputeGraphSeries(start_date, end_date, point_features[0].geometry(),
-                                                   PRODUCTS[product], timestep, statistic) for product in products}
-        else:
-            details = {
-                point.getInfo()['properties']['title']: ComputeGraphSeries(start_date, end_date, point.geometry(),
-                                                                           PRODUCTS[products[0]], timestep, statistic)
-                for point in point_features}
-            # for point in point_features:
-            #     details[point.getInfo()['properties']['title']] = GetPointData(start_date, dates, PRODUCTS[products[0]],
-            #                                                                    point, timestep)
-        print(details)
-        graph = OrderForGraph(details)
-        json_data = json.dumps(graph)
-        # Store the results in memcache.
-        memcache.add(details_name, json_data, MEMCACHE_EXPIRATION)
-    except (ee.EEException, HTTPException):
-        # Handle exceptions from the EE client library.
-        e = sys.exc_info()[0]
-        details['error'] = ErrorHandling(e)
-        json_data = json.dumps(details)
-    finally:
-        # Send the results to the browser.
-        print("Done getting JSON")
-        return json_data
+    # try:
+    print('NOT CACHE:')
+    if len(products) > 1:
+        print('Multiple products')
+        details = {product: ComputeGraphSeries(start_date, end_date, point_features[0].geometry(),
+                                               PRODUCTS[product], timestep, statistic) for product in products}
+    else:
+        product = PRODUCTS[products[0]]
+        print('Multiple Features with product: ', product)
+        # details = {
+        #     point.getInfo()['properties']['title']: ComputeGraphSeries(start_date, end_date, point.geometry(),
+        #                                                                PRODUCTS[products[0]], timestep, statistic)
+        #     for point in point_features}
+        for point in point_features:
+            details[point.getInfo()['properties']['title']] = GetPointData(start_date, end_date, product,
+                                                                           point, timestep, statistic)
+    graph = OrderForGraph(details)
+    json_data = json.dumps(graph)
+    # Store the results in memcache.
+    memcache.add(details_name, json_data, MEMCACHE_EXPIRATION)
+    # except (ee.EEException, HTTPException):
+    #     # Handle exceptions from the EE client library.
+    #     e = sys.exc_info()[0]
+    #     details['error'] = ErrorHandling(e)
+    #     json_data = json.dumps(details)
+    # finally:
+    # Send the results to the browser.
+    print("Done getting JSON")
+    return json_data
 
 
-def GetPointData(start_date, months, product, point_feature, timestep):
-    # Create base months
-    def CalculateForMonth(count):
+def GetPointData(start_date, end_date, product, point_feature, timestep, statistic):
+    start_date = ee.Date(start_date)
+    end_date = ee.Date(end_date)
+    dates = ee.List.sequence(0, end_date.difference(start_date, timestep).toInt())
+
+    region = point_feature.geometry()
+    point = ee.Geometry.Point(region.coordinates())
+    print(point.getInfo())
+
+    def CalculateForTimestep(count):
         m = start_date.advance(count, timestep)
-        img_col = product['collection'].filterDate(m, ee.Date(m).advance(1, timestep))
-        img_multiplied = img_col.map(lambda i: Multiply(i, product['multiply'])).sum()
-        img = img_multiplied.reduceRegion(
-            ee.Reducer.mean(), point_feature.geometry(),
+        img = product['collection'].filterDate(m, ee.Date(m).advance(1, timestep)).sum().reduceRegion(
+            ee.Reducer.mean(), region,
             product['scale'])
-        return ee.Feature(None, {
+        feature = ee.Feature(None, {
             'system:time_start': m.format('MM-YYYY'),
-            'value': img.values().get(0) * product['multiply']
+            'value': img.values().get(0)
         })
+        print(feature.getInfo())
+        return feature
 
-    chart_data = months.map(CalculateForMonth).getInfo()
+    chart_data = dates.map(CalculateForTimestep).getInfo()
 
     def ExtractMean(feature):
         return [feature['properties']['system:time_start'], feature['properties']['value']]
@@ -507,6 +511,7 @@ def GetShapeFileFeature(shapefile):
 def OrderForGraph(details):
     """Generates a multi-dimensional array of information to be displayed in the Graphs"""
     # Create first row of columns
+    print("Creating the graph data::")
     first_row = ['Date']
     for i in details:
         first_row.append(i)
