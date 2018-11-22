@@ -245,7 +245,9 @@ class GraphHandler(webapp2.RequestHandler):
         if json_data is not None:
             print('From Cache:')
             print(json_data)
-            return json_data
+            self.response.headers['Content-Type'] = 'application/json'
+            self.response.out.write(json_data)
+            return
         print('NOT CACHE:')
         start_date = self.request.get('startDate')
         end_date = self.request.get('endDate')
@@ -417,7 +419,7 @@ def GetAreaGeometry(name, area_type):
     elif area_type == 'country':
         stdt = 'Name'
         path = MYANMAR_PATH
-        names = name.upper()
+        name = name.upper()
     else:
         stdt = 'DT'
         path = DISTRICTS_PATH

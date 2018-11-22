@@ -37,6 +37,7 @@
 
     <!-- Our custom JavaScript for Earth Engine App. -->
     <script src="/static/scripts/output.js"></script>
+    <script src="/static/scripts/buttons.js"></script>
     <script src="/static/scripts/myanmar.js"></script>
     <script src="/static/scripts/markers.js"></script>
     <script src="/static/scripts/area.js"></script>
@@ -219,30 +220,22 @@
                 <div class="create-options">
 
                 </div>
-                <div class="tab-content">
+                <div class="tab-content row">
                     <!-- Country Options -->
-                    <div id="graph" class="tab-pane fade in active show">
-                        <button class="btn btn-success form-control" onclick="return false;" id="graph-button">Create
-                            Graph
+                    <div class="col-lg-6">
+                        <button class="btn btn-success form-control" onclick="return false;" id="graph-button">
+                            Create Graph
+                        </button>
+                        <button class="btn btn-success form-control hidden" onclick="return false;" id="overlay-button">
+                            Create Overlay
                         </button>
                     </div>
-                    <div id="overlay" class="tab-pane fade">
-                        <button class="btn btn-success form-control" onclick="return false;" id="overlay-button">Create
-                            Overlay
-                        </button>
+                    <div class="col-lg-6">
+                        <a class="btn btn-success btn-block disabled form-control"
+                           id="download-button" style="color:inherit;" target="_blank">
+                            <i class="far fa-save fa-lg"></i> Download CSV
+                        </a>
                     </div>
-                </div>
-                <div class="download download-img">
-                    <a target="_blank" class="btn btn-success btn-block form-control" id="download-img-btn"
-                       style="color:inherit;">
-                        <i class="far fa-save fa-lg"></i> Download Image
-                    </a>
-                </div>
-                <div class="download download-csv">
-                    <a target="_blank" class="btn btn-success btn-block form-control" id="download-csv-btn"
-                       style="color:inherit;">
-                        <i class="far fa-save fa-lg"></i> Download CSV
-                    </a>
                 </div>
             </div>
         </form>
@@ -299,7 +292,6 @@
 <script>
     myanmar.boot(
         '{{ key | safe }}');
-
 </script>
 
 

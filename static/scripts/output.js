@@ -3,14 +3,13 @@ output = {};
 $(function () {
     output.type = 'graph';
     $('.create-buttons .nav-item').on('click', output.switchOutput.bind(this));
-
 });
 
 /**
  * Click listener for when Selection Radio-buttons are clicked
  * @param event
  */
-output.switchStyle = function () {
+output.switchMethod = function () {
 
     var overlayTab = $('#overlay-tab');
     var graphTab = $('#graph-tab');
@@ -42,11 +41,12 @@ output.switchStyle = function () {
  */
 output.switchOutput = function (event) {
     const type = $(event.target).text().toLowerCase();
-    console.log('Reset output for: ' + type);
+    console.log('Switching output to: ' + type);
     output.type = type;
     timesteps.reset(type);
     statistics.reset(type);
     products.reset(type);
+    buttons.reset(type);
 };
 
 /**
@@ -59,6 +59,7 @@ output.reset = function () {
     timesteps.reset(type);
     statistics.reset(type);
     products.reset(type);
+    buttons.reset(type);
 };
 /**
  *  Returns the element of the current opened tab

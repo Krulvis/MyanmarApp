@@ -34,7 +34,7 @@ myanmar.App = function () {
     $('.results .close').click(this.hidePanel.bind(this));
 
     //Respond to radio button clicks (switching input style)
-    $('.method-container .nav-item').on('click', this.switchStyle.bind(this));
+    $('.method-container .nav-item').on('click', this.switchMethod.bind(this));
 
     //Adds a marker for given input
     $('.add-marker').on('click', markers.addMarkerFromForm.bind(this));
@@ -49,14 +49,6 @@ myanmar.App = function () {
 
     $('#graph-button').on('click', function (event) {
         myanmar.instance.createGraph();
-    });
-
-    $('#download-csv-btn').click(function () {
-        var csvFormattedDataTable = myanmar.App.graphToCSV(myanmar.instance.chartData);
-        var encodedUri = 'data:application/csv;charset=utf-8,' + encodeURIComponent(csvFormattedDataTable);
-        this.href = encodedUri;
-        this.download = 'table-data.csv';
-        this.target = '_blank';
     });
 
     this.map.controls[google.maps.ControlPosition.TOP_RIGHT].push(document.getElementById('legend'));
@@ -74,7 +66,6 @@ myanmar.App.prototype.initVals = function () {
     timesteps.reset(this.outputType);
     statistics.reset(this.outputType);
     products.reset(this.outputType);
-
     //Load features after instance has been created
     area.loadFeatures('country', function () {
         //Start by selecting Myanmar
@@ -113,8 +104,6 @@ myanmar.App.prototype.createOverlay = function () {
     const startDate = $('#startDate').val();
     const endDate = $('#endDate').val();
     const button = $('#overlay-button');
-    const downloadImg = $('.download-img');
-    const downloadCSV = $('.download-csv');
     const product = this.getProduct();
     const timestep = this.getTimestep();
     const statistic = this.getStatistic();
@@ -130,8 +119,8 @@ myanmar.App.prototype.createOverlay = function () {
         method: 'GET',
         beforeSend: function () {
             button.html('Loading map overlay...');
-            downloadImg.hide();
-            downloadCSV.hide();
+            buttons.disableDownload();
+            buttons.setDownloadButton('overlay');
             error.hide();
             myanmar.instance.clearOverlays();
         },
@@ -152,9 +141,9 @@ myanmar.App.prototype.createOverlay = function () {
             var token = data['token'];
             $('#legend-max span').html(myanmar.App.format(data['max']));
             $('#legend-min span').html(myanmar.App.format(data['min']));
-            downloadImg.show();
-            $('#download-img-btn').attr("href", data['download_url']);
             var legend = $('#legend');
+            buttons.getDownloadButton().attr("href", data['download_url']);
+            buttons.activateDownload();
             legend.show();
             this.addOverlay(mapId, token);
         }
@@ -167,10 +156,7 @@ myanmar.App.prototype.createOverlay = function () {
 myanmar.App.prototype.createGraph = function () {
     const startDate = $('#startDate').val();
     const endDate = $('#endDate').val();
-    const button = $('#graph-button');
-    const graph = $('#graph');
-    const downloadImg = $('.download-img');
-    const downloadCSV = $('.download-csv');
+    const button = $('#create-button');
     const product = this.getProduct();
     const target = this.getTarget();
     const areaType = area.getSelectedAreaType();
@@ -186,8 +172,8 @@ myanmar.App.prototype.createGraph = function () {
             + '&product=' + product + '&statistic=' + statistic + '&target=' + target + '&areaType=' + areaType + '&timestep=' + timestep,
         method: 'GET',
         beforeSend: function () {
-            downloadCSV.hide();
-            downloadImg.hide();
+            buttons.disableDownload();
+            buttons.setDownloadButton('graph');
             error.hide();
             button.html('Loading...');
         }, error: function (data) {
@@ -202,7 +188,7 @@ myanmar.App.prototype.createGraph = function () {
             button.html(myanmar.App.GRAPH_BASE_BUTTON_NAME);
             this.chartTitle = data['title'];
             console.log(data);
-            downloadCSV.show();
+            buttons.activateDownload();
             this.chartData = data['chart_data'];
             this.showChart();
         }
@@ -344,14 +330,13 @@ myanmar.App.prototype.hidePanel = function () {
  * Click listener for when Selection Radio-buttons are clicked
  * @param event
  */
-myanmar.App.prototype.switchStyle = function (event) {
+myanmar.App.prototype.switchMethod = function (event) {
     var html = $(event.target).html();
     var style = html.substr(html.indexOf('</i>') + 4);
     this.selectionMethod = style.toLowerCase();
-    console.log("Switching to: " + this.selectionMethod);
+    console.log("Switching method to: " + this.selectionMethod);
     $('.selection-group button').html(style);
     $('#error-message').hide();
-    $('.download').hide();
     $('#legend').hide();
 
     /*
@@ -361,7 +346,7 @@ myanmar.App.prototype.switchStyle = function (event) {
     $('#overlay-button').html(myanmar.App.OVERLAY_BASE_BUTTON_NAME);
     $('#graph-button').html(myanmar.App.GRAPH_BASE_BUTTON_NAME);
     this.map.data.revertStyle();
-    output.switchStyle();
+    output.switchMethod();
 };
 
 /**
