@@ -13,10 +13,16 @@
     vertical-align: middle;
 }
 
-.header-container .advertisement img {
-    vertical-align: middle;
-    width: 70%;
+.header-container .advertisement .content {
+    margin-right: 30px;
+    margin-top: 5px;
     max-height: 110px;
+}
+
+.header-container .advertisement .content img {
+    vertical-align: middle;
+    width: 50%;
+    height: 100%;
 }
 
 .header-container .page-header {
@@ -41,6 +47,7 @@
 
 .header-container .extra .links {
     margin-top: 20px;
+    margin-left: 30px;
 }
 
 .header-container .extra .buttons {

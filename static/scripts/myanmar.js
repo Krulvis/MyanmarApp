@@ -174,7 +174,7 @@ myanmar.App.prototype.createGraph = function () {
     const product = this.getProduct();
     const target = this.getTarget();
     const areaType = area.getSelectedAreaType();
-    const statistic = this.getStatistic();
+    const statistic = 'sum';//this.getStatistic();
     const timestep = this.getTimestep();
 
     let error = $('#error-message');

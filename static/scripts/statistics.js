@@ -4,7 +4,7 @@ statistics.reset = function (type) {
     var options = $('.create-options');
     this.removeFrom(options);
     if (type === 'graph') {
-        this.addTo(options);
+        this.removeFrom(options);
     } else if (type === 'overlay') {
         switch (myanmar.instance.selectionMethod) {
             case 'area':
