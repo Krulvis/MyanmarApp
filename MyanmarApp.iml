@@ -13,8 +13,8 @@
     </facet>
     <facet type="google-appengine-python" name="Google App Engine (Python)">
       <configuration>
-        <option name="rootFolder" value="C:\Users\Joep\IdeaProjects\MyanmarApp" />
-        <option name="sdkFolder" value="C:\Program Files (x86)\Google\Cloud SDK\google-cloud-sdk\platform\google_appengine" />
+        <option name="rootFolder" value="$MODULE_DIR$" />
+        <option name="sdkFolder" value="/opt/google-cloud-sdk/platform/google_appengine" />
         <option name="templatesFolder" value="" />
         <option name="oauth2" value="false" />
         <option name="deployConfigured" value="false" />
@@ -25,9 +25,9 @@
   <component name="NewModuleRootManager" inherit-compiler-output="true">
     <exclude-output />
     <content url="file://$MODULE_DIR$" />
-    <orderEntry type="jdk" jdkName="Python 2.7 (venv)" jdkType="Python SDK" />
+    <orderEntry type="jdk" jdkName="Python 2.7" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" name="Google App Engine SDK WIII" level="project" />
+    <orderEntry type="library" name="Google App Engine SDK Linux" level="project" />
   </component>
   <component name="TemplatesService">
     <option name="TEMPLATE_CONFIGURATION" value="Django" />
