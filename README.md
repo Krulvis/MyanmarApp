@@ -1,7 +1,7 @@
 Earth Engine Application: Future Water
 ================================
 
-[Live Demo](https://futurewaterstest.appspot.com/)
+[Live Demo](https://myanmar-rainapp.appspot.com/)
 
 This is a Google Earth Engine Web Application build for Future Water, 
 it shows graphs and map overlays of different ImageCollections over Myanmar as a country and it's regions.
