@@ -4,13 +4,7 @@
     column-count: 4;
     -moz-column-count: 4;
     -webkit-column-count: 4;
-    border-bottom: 5px solid #1aa3b9;
-}
-
-.header-container .advertisement {
-    height: 110px;
-    white-space: nowrap;
-    text-align: left;
+    border-bottom: 5px solid #eb2839;
 }
 
 .header-container .helper {
@@ -27,28 +21,26 @@
 
 .header-container .page-header {
     height: 110px;
+    text-align: left;
 }
 
-.header-container .page-header .raincloud {
+.header-container .page-header .big-logo {
     height: 80px;
-    width: 100px;
+    margin-top: 5px;
 }
 
-.header-container .page-header .raincloud-logo {
-    text-align: right;
-}
-
-.header-container .page-header .app-title {
-    margin-top: 30px;
-}
-
-.header-container .page-header .app-title h1 {
-    color: #1aa3b9;
+.header-container .page-header p {
+    margin-top: -4px;
+    margin-left: -20px;
     font-weight: bold;
 }
 
 .header-container .extra {
-    text-align: right;
+    text-align: left;
+}
+
+.header-container .extra .links {
+    margin-top: 20px;
 }
 
 .header-container .extra .buttons {
@@ -60,6 +52,18 @@
 
 .header-container .extra .buttons .information:hover {
     cursor: pointer;
+}
+
+.header-container .advertisement {
+    height: 110px;
+    white-space: nowrap;
+    text-align: right;
+    padding: 0;
+    right: -10px;
+}
+
+.header-container .advertisement #developed-by {
+    margin-bottom: 0;
 }
 
 @media (max-width: 1500px) {

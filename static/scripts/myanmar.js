@@ -116,8 +116,8 @@ myanmar.App.prototype.createOverlay = function () {
     const downloadImg = $('.download-img');
     const downloadCSV = $('.download-csv');
     const product = this.getProduct();
-    const timestep = 'day';//this.getTimestep();
-    const statistic = 'sum';//this.getStatistic();
+    const timestep = this.getTimestep();
+    const statistic = this.getStatistic();
     const target = this.getTarget();
     const areaType = area.getSelectedAreaType();
 
@@ -224,7 +224,7 @@ myanmar.App.prototype.checkSelections = function (product, statistic, timestep) 
             }
             break;
         case 'coordinate':
-            if (this.area.length === 0) {
+            if (this.markers.length === 0) {
                 error.show().html('Create a Marker first (or click on map)!');
                 return false;
             }
@@ -252,18 +252,20 @@ myanmar.App.prototype.checkSelections = function (product, statistic, timestep) 
 };
 
 /**
- * Handle Map Click (Places marker, Selects Country)
+ * Handle Map Click (Places marker, Selects Country)https://soundcloud.com/discover/sets/weekly:5513946
  * @param event
  */
 myanmar.App.prototype.handleMapClick = function (event) {
 
     if (this.selectionMethod === 'area') {
         area.add(event.feature);
+    } else if (this.selectionMethod === 'coordinate') {
+        markers.addMarkerFromLng(event.latLng, $('#title').val());
     }
 };
 
 /**
- * Shows a chart with the given timeseries.
+ * Shows a chart with the given timeseries.v
  * @param {Array<Array<number>>} timeseries The timeseries data
  *     to plot in the chart.
  */
@@ -322,6 +324,8 @@ myanmar.App.prototype.addOverlay = function (eeMapId, eeToken) {
  * Removes previously added Overlay Map Types (Used to remove Map Overlay Rainfall)
  */
 myanmar.App.prototype.clearOverlays = function () {
+    $('#legend-min span').html(0);
+    $('#legend-max span').html(0);
     var overlays = this.map.overlayMapTypes;
     while (overlays[0]) {
         overlays.pop().setMap(null);
@@ -343,21 +347,20 @@ myanmar.App.prototype.hidePanel = function () {
 myanmar.App.prototype.switchStyle = function (event) {
     var html = $(event.target).html();
     var style = html.substr(html.indexOf('</i>') + 4);
-    console.log(style);
     this.selectionMethod = style.toLowerCase();
+    console.log("Switching to: " + this.selectionMethod);
     $('.selection-group button').html(style);
     $('#error-message').hide();
     $('.download').hide();
     $('#legend').hide();
+
     /*
     Reset buttons
      */
     this.clearOverlays();
     $('#overlay-button').html(myanmar.App.OVERLAY_BASE_BUTTON_NAME);
     $('#graph-button').html(myanmar.App.GRAPH_BASE_BUTTON_NAME);
-
     this.map.data.revertStyle();
-
     output.switchStyle();
 };
 
@@ -429,7 +432,7 @@ myanmar.App.prototype.getTarget = function () {
         case 'shapefile':
             return $('#shapefile-link').val();
         case 'coordinate':
-            return marker.getJSON();
+            return markers.getJSON();
         default:
             $('#error-message').show().html('Please select a method of targeting first!');
             return 'null';

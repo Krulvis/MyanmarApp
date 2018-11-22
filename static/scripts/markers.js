@@ -3,15 +3,15 @@ markers = {};
 $(function () {
     $('.markers-table').on('click', '.remove-marker', function () {
         var tr = $(this).closest('tr');
-        var title = tr.find('.title').html();
-        console.log('Removing Marker: ' + title);
+        var position = tr.find('.latlng').html();
+        console.log('Removing Marker: ' + position);
         var markers = [];
         myanmar.instance.markers.forEach(function (marker) {
-            if (markers.getTitle() !== title) {
-                markers.push(markers);
-                console.log("Removed at: " + markers.index);
+            if (marker.getPosition().toString() !== position) {
+                markers.push(marker);
             } else {
-                markers.setMap(null);
+                console.log("Removed at: " + marker.index);
+                marker.setMap(null);
             }
         });
         myanmar.instance.markers = markers;
@@ -20,12 +20,20 @@ $(function () {
 });
 
 /**
- * Gets latLng from click
- * @param event
- * @returns {*[]}
+ * Enable or disable drawing the markers, used when switching styles
+ * @param draw
  */
-markers.addRegion = function (event) {
-    let feature = event.feature;
+markers.draw = function (draw) {
+    if (draw) {
+        var map = myanmar.instance.map;
+        myanmar.instance.markers.forEach(function (marker) {
+            marker.setMap(map);
+        });
+    } else {
+        myanmar.instance.markers.forEach(function (marker) {
+            marker.setMap(null);
+        });
+    }
 };
 
 /**
@@ -39,25 +47,36 @@ markers.addMarkerFromForm = function () {
         $('#error-message').show().html('Please enter a valid Latitude, Longitude and Title');
     } else {
         $('#error-message').hide();
-        area.addMarker(lat, lng, title);
+        markers.addMarker(lat, lng, title);
     }
 };
 
 /**
- * Add marker to map and
+ * Add marker to List and Table
+ */
+markers.addMarkerFromLng = function (latLng, title) {
+    if (title === '') {
+        title = myanmar.instance.markers.length.toString();
+    }
+    var marker = new google.maps.Marker({
+        position: latLng,
+        map: myanmar.instance.map,
+        title: title
+    });
+    console.log('Added marker: ' + marker.getTitle());
+    myanmar.instance.markers.push(marker);
+    var tableContent = '<tr><td class="latlng">' + latLng + '</td><td class="title">' + title + '</td><td><button class="btn btn-danger remove-marker">Remove</button></td></tr>';
+    $('.markers-table tbody').append(tableContent);
+    output.reset();
+};
+
+/**
+ * Add marker
  */
 markers.addMarker = function (lat, lng, title) {
     //nameing
     var position = new google.maps.LatLng(lat, lng);
-    var marker = new google.maps.Marker({
-        position: position,
-        map: myanmar.instance.map,
-        title: title
-    });
-    myanmar.instance.markers.push(markers);
-    console.log('Added marker: ' + markers.getTitle());
-    var tableContent = '<tr><td>' + lat + '</td><td>' + lng + '</td><td class="title">' + title + '</td><td><button class="btn btn-danger remove-marker">Remove</button></td></tr>';
-    $('.markers-table tbody').append(tableContent);
+    markers.addMarkerFromLng(position, title)
 };
 
 /**
@@ -76,9 +95,9 @@ markers.getJSON = function () {
                 "coordinates": []
             }
         };
-        temp.properties.title = markers.getTitle();
-        var position = markers.getPosition();
-        temp.geometry.coordinates = [position.lat(), position.lng()];
+        temp.properties.title = marker.getTitle();
+        var position = marker.getPosition();
+        temp.geometry.coordinates = [position.lng(), position.lat()];
         return temp;
     });
     var data = {'features': features};

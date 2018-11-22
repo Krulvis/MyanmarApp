@@ -30,10 +30,12 @@ products.reset = function (output) {
 };
 
 products.addTo = function (output, element) {
+    const sm = myanmar.instance.selectionMethod;
     let radio = output === 'graph' ? 'checkbox' : 'radio';
-    const rowCount = $('.area-table tbody').find('tr').length;
+    const rowCount = sm === 'area' ? $('.area-table tbody').find('tr').length
+        : sm === 'coordinate' ? $('.markers-table tbody').find('tr').length : 0;
     console.log('Table length: ' + rowCount);
-    if (myanmar.instance.selectionMethod === 'area' && rowCount > 1) {
+    if (rowCount > 1) {
         radio = 'radio'
     }
     if (element.find('.products-container').length === 0) {

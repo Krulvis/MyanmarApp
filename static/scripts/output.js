@@ -1,10 +1,7 @@
 output = {};
 
 $(function () {
-
-
     output.type = 'graph';
-
     $('.create-buttons .nav-item').on('click', output.switchOutput.bind(this));
 
 });
@@ -20,25 +17,20 @@ output.switchStyle = function () {
     /*
     Change settings
      */
-    switch (this.selectionMethod) {
+    switch (myanmar.instance.selectionMethod) {
         case 'coordinate':
             overlayTab.addClass('disabled');
             graphTab.tab('show');//Force going to graph
-            this.map.data.revertStyle();
-            area.draw(true);
+            markers.draw(true);
             break;
         case 'area':
             overlayTab.removeClass('disabled');
-            this.map.data.revertStyle();
-            area.draw(false);
-            //TODO MARK WHOLE COUNTRY
-            if (this.selectedCountry != null) {
-                this.map.data.overrideStyle(this.selectedCountry, myanmar.App.SELECTED_STYLE);
-            }
+            markers.draw(false);
             break;
         case 'shapefile':
             overlayTab.removeClass('disabled');
-            this.map.data.revertStyle();
+            myanmar.instance.map.data.revertStyle();
+            markers.draw(false);
             break;
     }
     output.reset();

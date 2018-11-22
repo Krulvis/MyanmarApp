@@ -27,10 +27,10 @@ body,
 }
 
 .futurewater .settings {
-    top: 100px;
+    top: 82px;
     overflow-y: auto;
     overflow-x: hidden;
-    max-height: 85%;
+    max-height: calc(100% - 85px);
     max-width: 600px;
     font-size: 14px;
 }
@@ -95,10 +95,6 @@ body,
     font-size: 14px;
 }
 
-.futurewater .settings .method-container .markers-table .table .title {
-    font-size: 12px;
-}
-
 .futurewater .settings .create-buttons {
     padding-top: 30px;
 }
@@ -157,10 +153,14 @@ body,
 }
 
 /* Small screens. */
-@media (max-height: 600px) {
+@media (max-height: 550px) {
     .futurewater .settings {
         top: 0;
-        max-height: 100%;
+        max-height: 98%;
+    }
+
+    .header-container {
+        display: none;
     }
 }
 

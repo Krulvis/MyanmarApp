@@ -36,33 +36,50 @@
     <link rel="stylesheet" href="/static/css/header.css">
 
     <!-- Our custom JavaScript for Earth Engine App. -->
-    <script src="/static/scripts/markers.js"></script>
     <script src="/static/scripts/output.js"></script>
     <script src="/static/scripts/myanmar.js"></script>
+    <script src="/static/scripts/markers.js"></script>
     <script src="/static/scripts/area.js"></script>
     <script src="/static/scripts/products.js"></script>
     <script src="/static/scripts/statistics.js"></script>
     <script src="/static/scripts/timesteps.js"></script>
     <script src="/static/scripts/inputFile.js"></script>
+    <script src="/static/scripts/information.js"></script>
 
 </head>
 <body>
 <!-- The title of the application. -->
 <div class="header-container row">
+    <div class="extra col-md-5 row">
+        <div class="buttons col-md-3">
+            <div class="links">
+                <div class="contact">
+                    <a href="https://www.futurewater.eu/about-us/contact-2/">
+                        <i class="far fa-envelope"></i> Contact</a></div>
+                <div class="information" data-toggle="collapse" data-target="#information">
+                    <i class="fas fa-info-circle"></i>
+                    Information
+                </div>
+            </div>
+        </div>
     <div class="extra col-md-4 row">
         <div class="col-md-9">
-            <div id="information" class="collapse ">
+            <div id="information" class="{# collapse #} hidden">
                 Lorem ipsum dolor sit amet, consectetur adipisicing elit,
                 sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam,
                 quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
             </div>
         </div>
-        <div class="buttons col-md-3">
-            <div class="contact"><a href="https://www.futurewater.eu/about-us/contact-2/"><i
-                    class="far fa-envelope"></i> Contact</a></div>
-            <div class="information" data-toggle="collapse"
-                 data-target="#information"><i class="fas fa-info-circle"></i> Information
-            </div>
+    </div>
+    <div class="col-md-4 page-header">
+        <img class="big-logo" src="/static/img/big_logo.jpg">
+        <p>Tool for monitoring and evaluating rainfall patterns across Myanmar.</p>
+    </div>
+    <div class="advertisement col-md-3">
+        <p id="powered-by">Powered by <i>Google Earth Engine</i></p>
+        <p id="developed-by">Developed by:</p>
+        <div class="fw-logo">
+            <a href="https://www.futurewater.eu/"><img class="logo" src="/static/img/logo.png"></a>
         </div>
     </div>
     <div class="col-md-5">
@@ -93,7 +110,8 @@
             <div class="dates row">
                 <div class="col-lg form-group">
                     <label class="bold" for="startDate">Start Date</label>
-                    <input type="date" data-date-format="DD MM YYYY" class="form-control datepicker" id="startDate" value="2017-01-01">
+                    <input type="date" data-date-format="DD MM YYYY" class="form-control datepicker" id="startDate"
+                           value="2017-01-01">
                 </div>
                 <div class="col-lg form-group">
                     <label class="bold" for="endDate">End Date</label>
@@ -190,8 +208,7 @@
                             <table class="table table-striped">
                                 <thead>
                                 <tr>
-                                    <th>Lat</th>
-                                    <th>Lng</th>
+                                    <th>LatLng</th>
                                     <th>Title</th>
                                     <th>Remove</th>
                                 </tr>
@@ -273,7 +290,7 @@
     <div class="ui-layout layout-flow layout-flow-vertical" style="padding:8px;">
         <div class="ui-widget stretch-horizontal ui-panel" style="margin: 0px; background-color: white;">
             <div class="ui-layout layout-flow layout-flow-horizontal">
-                <div class="ui-widget ui-label" style="margin: 8px; background-color: white;">
+                <div class="ui-widget ui-label" id="legend-min" style="margin: 8px; background-color: white;">
                     <span class="label">0</span>
                 </div>
                 <div class="ui-widget stretch-horizontal ui-label"
