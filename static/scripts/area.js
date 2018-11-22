@@ -57,6 +57,7 @@ area.loadFeatures = function (type, callback) {
     //Clear table
     $(".area-table tbody").empty();
     output.reset();
+    myanmar.instance.clearOverlays();
 
     const areaField = $('#area-field');
     //Set auto complete
@@ -194,4 +195,3 @@ area.getSelectedAreas = function () {
     });
     return names;
 };
-

@@ -1,7 +1,12 @@
+overlay weghalen bij wijzigen van selection
 
-Statistics voor overlays:
-    Yearly Mean
-    Yearly Min
-    Yearly Max
-    Daily Max
+Graphs -> statistics opties weghalen
+Graphs -> Naam van bestand veranderen (IPV ShapeFile)
+Graphs -> ScatterPlot -> LinePlot Done
+Graphs -> cache check dates (same response)
 
+UI:
+ Create / Download knoppen naast elkaar
+ Logo Future water verkleinen
+ Google Earth engine link maken
+ boel wat naar binnen trekken (whitespace)

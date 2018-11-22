@@ -200,10 +200,10 @@ myanmar.App.prototype.createGraph = function () {
             error.show().html(data['error']);
         } else {
             button.html(myanmar.App.GRAPH_BASE_BUTTON_NAME);
-            this.chartTitle = this.selectionMethod === 'country' ? this.selectedCountry.getProperty('Country') : this.selectionMethod === 'coordinate' ? 'Markers' : 'ShapeFile';
+            this.chartTitle = data['title'];
             console.log(data);
             downloadCSV.show();
-            this.chartData = data;
+            this.chartData = data['chart_data'];
             this.showChart();
         }
     }).bind(this));
@@ -274,7 +274,7 @@ myanmar.App.prototype.showChart = function () {
     $('.results .title').show().text(this.chartTitle);
     var data = google.visualization.arrayToDataTable(this.chartData);
     var wrapper = new google.visualization.ChartWrapper({
-        chartType: this.chartData.length > 50 ? 'ScatterChart' : 'LineChart',
+        chartType: 'LineChart',//this.chartData.length > 50 ? 'ScatterChart' : 'LineChart',
         dataTable: data,
         options: {
             title: 'Precipitation over time',

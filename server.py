@@ -94,15 +94,6 @@ class OverlayHandler(webapp2.RequestHandler):
 
     def get(self):
         name = self.request.url
-        start_date = self.request.get('startDate')
-        end_date = self.request.get('endDate')
-        targets = self.request.get('target').split(',')
-        product = self.request.get('product')
-        timestep = self.request.get('timestep')
-        statistic = self.request.get('statistic')
-        method = self.request.get('method')
-        area_type = self.request.get('areaType')
-        values = {}
         json_data = memcache.get(name)
         print('Getting For URL: ', name)
         # If we've cached details for this URL, return them.
@@ -112,6 +103,15 @@ class OverlayHandler(webapp2.RequestHandler):
             self.response.headers['Content-Type'] = 'application/json'
             self.response.out.write(json_data)
             return
+        start_date = self.request.get('startDate')
+        end_date = self.request.get('endDate')
+        targets = self.request.get('target').split(',')
+        product = self.request.get('product')
+        timestep = self.request.get('timestep')
+        statistic = self.request.get('statistic')
+        method = self.request.get('method')
+        area_type = self.request.get('areaType')
+        values = {}
         if method == 'area':
             features = GetMultiAreaFeatures(targets, area_type)
             # values['center'] = feature.centroid().getInfo()['coordinates']
@@ -134,31 +134,6 @@ class OverlayHandler(webapp2.RequestHandler):
         self.response.out.write(json.dumps(values))
 
 
-class GraphHandler(webapp2.RequestHandler):
-
-    def get(self):
-        name = self.request.url
-        start_date = self.request.get('startDate')
-        end_date = self.request.get('endDate')
-        targets = self.request.get('target')
-        area_type = self.request.get('areaType')
-        product = self.request.get('product')
-        statistic = self.request.get('statistic')
-        timestep = self.request.get('timestep')
-        method = self.request.get('method')
-        if method == 'coordinate':
-            data = json.loads(targets)
-            print(data)
-            features = data['features']
-            content = GetPointsLineSeries(str(name), start_date, end_date, product.split(","), features, timestep,
-                                          statistic)
-        else:
-            content = GetGraphSeries(str(name), start_date, end_date, targets.split(","), area_type, method,
-                                     product.split(","), timestep, statistic)
-        self.response.headers['Content-Type'] = 'application/json'
-        self.response.out.write(content)
-
-
 class SFHandler(webapp2.RequestHandler):
 
     def get(self):
@@ -177,16 +152,6 @@ class TestHandler(webapp2.RequestHandler):
         features = ee.FeatureCollection('users/joepkt/myanmar_district_boundaries')
         kayeh = features.filter(ee.Filter.eq('DT', 'Kayeh'))
         print(kayeh.getInfo())
-
-
-# http://webapp-improved.appspot.com/tutorials/quickstart.html
-app = webapp2.WSGIApplication([
-    ('/overlay', OverlayHandler),
-    ('/graph', GraphHandler),
-    ('/test', TestHandler),
-    ('/shapefile', SFHandler),
-    ('/', MainHandler),
-])
 
 
 ###############################################################################
@@ -270,20 +235,51 @@ def GetOverlayImage(image, region, min, max, statistic):
 ###############################################################################
 #                                Graph For Regions.                           #
 ###############################################################################
+class GraphHandler(webapp2.RequestHandler):
 
-def GetGraphSeries(details_name, start_date, end_date, targets, area_type, method, products, timestep, statistic):
+    def get(self):
+        name = self.request.url
+        json_data = memcache.get(name)
+        print('Getting For URL: ', name)
+        # If we've cached details for this polygon, return them.
+        if json_data is not None:
+            print('From Cache:')
+            print(json_data)
+            return json_data
+        print('NOT CACHE:')
+        start_date = self.request.get('startDate')
+        end_date = self.request.get('endDate')
+        targets = self.request.get('target')
+        area_type = self.request.get('areaType')
+        product = self.request.get('product')
+        statistic = self.request.get('statistic')
+        timestep = self.request.get('timestep')
+        method = self.request.get('method')
+        products = product.split(",")
+        details = {}
+        if method == 'coordinate':
+            json_features = json.loads(targets)
+            print(json_features)
+            features = json_features['features']
+            details['chart_data'] = GetPointsLineSeries(start_date, end_date, products, features, timestep,
+                                                        statistic)
+            details['title'] = 'Markers'
+        else:
+            details['chart_data'] = GetGraphSeries(start_date, end_date, targets.split(','), area_type, method,
+                                                   products, timestep, statistic)
+            details['title'] = product if len(targets.split(',')) > 1 else targets
+
+        json_data = json.dumps(details)
+        # Store the results in memcache.
+        memcache.add(name, json_data, MEMCACHE_EXPIRATION)
+        self.response.headers['Content-Type'] = 'application/json'
+        self.response.out.write(json_data)
+
+
+def GetGraphSeries(start_date, end_date, targets, area_type, method, products, timestep, statistic):
     """Returns data to draw graphs with for single area"""
-    json_data = memcache.get(details_name)
-    print('Getting For URL: ', details_name)
-    # If we've cached details for this polygon, return them.
-    if json_data is not None:
-        print('From Cache:')
-        print(json_data)
-        return json_data
-
     details = {}
     try:
-        print('NOT CACHE:')
         # Else build new dictionary
 
         if method == 'area':
@@ -304,20 +300,17 @@ def GetGraphSeries(details_name, start_date, end_date, targets, area_type, metho
             details = {product: ComputeGraphSeries(start_date, end_date, region, PRODUCTS[product], timestep, statistic)
                        for product in products}
         print(details)
-        graph = OrderForGraph(details)
-        json_data = json.dumps(graph)
-        # Store the results in memcache.
-        memcache.add(details_name, json_data, MEMCACHE_EXPIRATION)
+        details = OrderForGraph(details)
+
     except (ee.EEException, HTTPException) as ex:
         # Handle exceptions from the EE client library.
         e = sys.exc_info()
         print('type', type(ex).__name__)
         print('ex args', ex.args)
         details['error'] = ErrorHandling(e)
-        json_data = json.dumps(details)
     finally:
         # Send the results to the browser.
-        return json_data
+        return details
 
 
 def ComputeGraphSeries(start_date, end_date, region, product, timestep, statistic):
@@ -331,7 +324,7 @@ def ComputeGraphSeries(start_date, end_date, region, product, timestep, statisti
         img_col = product['collection'].filterDate(m, ee.Date(m).advance(1, timestep))
         img_multiplied = GetCalculatedCollection(img_col.map(lambda i: Multiply(i, product['multiply'])), statistic)
         img = img_multiplied.reduceRegion(
-            GetReducer(statistic), region,
+            ee.Reducer.mean(), region,
             product['scale'])
         return ee.Feature(None, {
             'system:time_start': m.format(
@@ -353,19 +346,11 @@ def ComputeGraphSeries(start_date, end_date, region, product, timestep, statisti
 #                                Graph For Points.                            #
 ###############################################################################
 
-def GetPointsLineSeries(details_name, start_date, end_date, products, point_features, timestep, statistic):
-    # Get from cache
-    json_data = memcache.get(details_name)
-    if json_data is not None:
-        print('From Cache:')
-        print(json_data)
-        return json_data
-
+def GetPointsLineSeries(start_date, end_date, products, point_features, timestep, statistic):
     point_features = map(ee.Feature, point_features)  # Map to ee.Feature (loads GeoJSON)
     details = {}
 
     # try:
-    print('NOT CACHE:')
     if len(products) > 1:
         print('Multiple products')
         details = {product: ComputeGraphSeries(start_date, end_date, point_features[0].geometry(),
@@ -381,19 +366,15 @@ def GetPointsLineSeries(details_name, start_date, end_date, products, point_feat
         #     details[point.getInfo()['properties']['title']] = GetPointData(start_date, end_date, product,
         #                                                                    point, timestep, statistic)
     print(details)
-    graph = OrderForGraph(details)
-    json_data = json.dumps(graph)
-    # Store the results in memcache.
-    memcache.add(details_name, json_data, MEMCACHE_EXPIRATION)
+    details = OrderForGraph(details)
     # except (ee.EEException, HTTPException):
     #     # Handle exceptions from the EE client library.
     #     e = sys.exc_info()[0]
     #     details['error'] = ErrorHandling(e)
-    #     json_data = json.dumps(details)
     # finally:
     # Send the results to the browser.
-    print("Done getting JSON")
-    return json_data
+    print("Done getting Chart Data")
+    return details
 
 
 def GetPointData(start_date, end_date, product, point_feature, timestep, statistic):
@@ -559,6 +540,15 @@ DISTRICTS_PATH = 'users/joepkt/myanmar_district_boundaries'
 REGIONS_PATH = 'users/joepkt/myanmar_state_region_boundaries'
 BASINS_PATH = 'users/joepkt/myanmar_river_basins'
 MYANMAR_PATH = 'users/joepkt/myanmar_country_boundaries'
+
+# http://webapp-improved.appspot.com/tutorials/quickstart.html
+app = webapp2.WSGIApplication([
+    ('/overlay', OverlayHandler),
+    ('/graph', GraphHandler),
+    ('/test', TestHandler),
+    ('/shapefile', SFHandler),
+    ('/', MainHandler),
+])
 
 ###############################################################################
 #                               Initialization.                               #
