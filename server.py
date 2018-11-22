@@ -249,7 +249,7 @@ class GraphHandler(webapp2.RequestHandler):
         print('NOT CACHE:')
         start_date = self.request.get('startDate')
         end_date = self.request.get('endDate')
-        targets = self.request.get('target')
+        target = self.request.get('target')
         area_type = self.request.get('areaType')
         product = self.request.get('product')
         statistic = self.request.get('statistic')
@@ -258,16 +258,17 @@ class GraphHandler(webapp2.RequestHandler):
         products = product.split(",")
         details = {}
         if method == 'coordinate':
-            json_features = json.loads(targets)
+            json_features = json.loads(target)
             print(json_features)
             features = json_features['features']
             details['chart_data'] = GetPointsLineSeries(start_date, end_date, products, features, timestep,
                                                         statistic)
             details['title'] = 'Markers'
         else:
-            details['chart_data'] = GetGraphSeries(start_date, end_date, targets.split(','), area_type, method,
+            targets = target.split(",")
+            details['chart_data'] = GetGraphSeries(start_date, end_date, targets, area_type, method,
                                                    products, timestep, statistic)
-            details['title'] = product if len(targets.split(',')) > 1 else targets
+            details['title'] = 'ShapeFile' if method == 'shapefile' else product if len(targets) > 1 else target
 
         json_data = json.dumps(details)
         # Store the results in memcache.
@@ -375,38 +376,6 @@ def GetPointsLineSeries(start_date, end_date, products, point_features, timestep
     # Send the results to the browser.
     print("Done getting Chart Data")
     return details
-
-
-def GetPointData(start_date, end_date, product, point_feature, timestep, statistic):
-    start_date = ee.Date(start_date)
-    end_date = ee.Date(end_date)
-    dates = ee.List.sequence(0, end_date.difference(start_date, timestep).toInt())
-
-    region = point_feature.geometry()
-    point = ee.Geometry.Point(region.coordinates())
-    print(point.getInfo())
-
-    def CalculateForTimestep(count):
-        m = start_date.advance(count, timestep)
-        img = product['collection'].filterDate(m, ee.Date(m).advance(1, timestep)).sum().reduceRegion(
-            ee.Reducer.mean(), region,
-            product['scale'])
-        print(img)
-        feature = ee.Feature(None, {
-            'system:time_start': m.format('MM-YYYY'),
-            'value': img.values().get(0)
-        })
-        # print(feature.getInfo())
-        return feature
-
-    chart_data = dates.map(CalculateForTimestep).getInfo()
-
-    def ExtractMean(feature):
-        return [feature['properties']['system:time_start'], feature['properties']['value']]
-
-    chart_data = map(ExtractMean, chart_data)
-    print(chart_data)
-    return chart_data
 
 
 ###############################################################################
