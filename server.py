@@ -155,6 +155,11 @@ class GraphHandler(webapp2.RequestHandler):
         else:
             content = GetGraphSeries(str(name), start_date, end_date, targets.split(","), area_type, method,
                                      product.split(","), timestep, statistic)
+            content = GetPointsLineSeries(str(name), start_date, end_date, product, features)
+        else:
+            content = GetAreaGraphSeries(str(name), start_date, end_date, targets.split(','), area_type, method,
+                                         product.split(","),
+                                         timestep)
         self.response.headers['Content-Type'] = 'application/json'
         self.response.out.write(content)
 
@@ -426,7 +431,6 @@ def GetPointData(start_date, end_date, product, point_feature, timestep, statist
     chart_data = map(ExtractMean, chart_data)
     print(chart_data)
     return chart_data
-
 
 ###############################################################################
 #                                   Helpers.                                  #
