@@ -27,7 +27,7 @@
 
 .header-container .page-header {
     height: 110px;
-    text-align: left;
+    text-align: center;
 }
 
 .header-container .page-header .big-logo {
@@ -37,8 +37,8 @@
 
 .header-container .page-header p {
     margin-top: -4px;
-    margin-left: -20px;
     font-weight: bold;
+    white-space: nowrap;
 }
 
 .header-container .extra {
