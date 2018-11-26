@@ -166,10 +166,8 @@ body,
 
 @media (max-width: 900px) {
 
-    .futurewater .settings .logo {
-        top: 22px;
-        left: 30px;
-        max-height: 50%;
+    .futurewater .settings  {
+        top: 5px;
     }
 
     .futurewater .panel {
@@ -207,14 +205,6 @@ body,
 /* Large screens. */
 
 @media (min-width: 900px) {
-
-    .futurewater .settings .logo {
-        top: 30px;
-    }
-
-    .futurewater .settings #information {
-        max-width: 750px;
-    }
 
     .futurewater .settings {
         left: 20px;

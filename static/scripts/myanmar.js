@@ -156,7 +156,7 @@ myanmar.App.prototype.createOverlay = function () {
 myanmar.App.prototype.createGraph = function () {
     const startDate = $('#startDate').val();
     const endDate = $('#endDate').val();
-    const button = $('#create-button');
+    const button = $('#graph-button');
     const product = this.getProduct();
     const target = this.getTarget();
     const areaType = area.getSelectedAreaType();
@@ -175,7 +175,7 @@ myanmar.App.prototype.createGraph = function () {
             buttons.disableDownload();
             buttons.setDownloadButton('graph');
             error.hide();
-            button.html('Loading...');
+            button.html('Loading Graph...');
         }, error: function (data) {
             button.html('error');
             error.show().html(data['error']);
@@ -492,7 +492,6 @@ myanmar.App.INACTIVE_STYLE = {
 };
 
 myanmar.App.OVERLAY_BASE_BUTTON_NAME = 'Create Overlay';
-
 myanmar.App.GRAPH_BASE_BUTTON_NAME = 'Create Graph';
 
 myanmar.App.DEFAULT_CENTER = {lng: 96.95112549402336, lat: 18.00746449851361};

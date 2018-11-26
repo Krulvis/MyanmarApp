@@ -180,13 +180,10 @@ def GetOverlayFor(start_date, end_date, product_name, statistic, target_feature,
              'scale': product['scale']})
     except (ee.EEException, HTTPException) as ex:
         # Handle exceptions from the EE client library.
-        e = sys.exc_info()
-        print('type', type(ex).__name__)
-        print('ex args', ex.args)
         if 'Deadline' in ex.args[0]:
             values['error'] = 'Timeout, deadline exceeded'
         else:
-            values['error'] = ErrorHandling(e)
+            values['error'] = ErrorHandling(ex)
     finally:
         print('Returning curr values')
         return values
@@ -258,23 +255,21 @@ class GraphHandler(webapp2.RequestHandler):
         timestep = self.request.get('timestep')
         method = self.request.get('method')
         products = product.split(",")
-        details = {}
         if method == 'coordinate':
             json_features = json.loads(target)
             print(json_features)
             features = json_features['features']
-            details['chart_data'] = GetPointsLineSeries(start_date, end_date, products, features, timestep,
-                                                        statistic)
-            details['title'] = 'Markers'
+            details = GetPointsLineSeries(start_date, end_date, products, features, timestep,
+                                          statistic)
         else:
             targets = target.split(",")
-            details['chart_data'] = GetGraphSeries(start_date, end_date, targets, area_type, method,
-                                                   products, timestep, statistic)
+            details = GetGraphSeries(start_date, end_date, targets, area_type, method,
+                                     products, timestep, statistic)
             details['title'] = 'ShapeFile' if method == 'shapefile' else product if len(targets) > 1 else target
-
         json_data = json.dumps(details)
         # Store the results in memcache.
-        memcache.add(name, json_data, MEMCACHE_EXPIRATION)
+        if 'error' not in details.keys():
+            memcache.add(name, json_data, MEMCACHE_EXPIRATION)
         self.response.headers['Content-Type'] = 'application/json'
         self.response.out.write(json_data)
 
@@ -284,33 +279,31 @@ def GetGraphSeries(start_date, end_date, targets, area_type, method, products, t
     details = {}
     try:
         # Else build new dictionary
-
+        chart_data = None
         if method == 'area':
             if len(targets) > 1:  # Multiple area's means one product (build dictionary of Area's with their data)
                 print('Going for multiple areas: {}, with product: {}'.format(targets, products))
-                details = {target: ComputeGraphSeries(start_date, end_date, GetAreaGeometry(target, area_type),
-                                                      PRODUCTS[products[0]], timestep, statistic) for
-                           target in targets}
+                chart_data = {target: ComputeGraphSeries(start_date, end_date, GetAreaGeometry(target, area_type),
+                                                         PRODUCTS[products[0]], timestep, statistic) for
+                              target in targets}
             else:
                 print('Going for single area: {}, with products: {}'.format(targets, products))
                 region = GetAreaGeometry(targets[0], area_type)
-                details = {
+                chart_data = {
                     product: ComputeGraphSeries(start_date, end_date, region, PRODUCTS[product], timestep, statistic)
                     for
                     product in products}
         elif method == 'shapefile':
             region = GetShapeFileFeature(targets)
-            details = {product: ComputeGraphSeries(start_date, end_date, region, PRODUCTS[product], timestep, statistic)
-                       for product in products}
+            chart_data = {
+                product: ComputeGraphSeries(start_date, end_date, region, PRODUCTS[product], timestep, statistic)
+                for product in products}
         print(details)
-        details = OrderForGraph(details)
+        details['chart_data'] = OrderForGraph(chart_data)
 
     except (ee.EEException, HTTPException) as ex:
         # Handle exceptions from the EE client library.
-        e = sys.exc_info()
-        print('type', type(ex).__name__)
-        print('ex args', ex.args)
-        details['error'] = ErrorHandling(e)
+        details['error'] = ErrorHandling(ex)
     finally:
         # Send the results to the browser.
         return details
@@ -351,33 +344,34 @@ def ComputeGraphSeries(start_date, end_date, region, product, timestep, statisti
 
 def GetPointsLineSeries(start_date, end_date, products, point_features, timestep, statistic):
     point_features = map(ee.Feature, point_features)  # Map to ee.Feature (loads GeoJSON)
-    details = {}
+    details = {
+        'title': 'Markers'
+    }
 
-    # try:
-    if len(products) > 1:
-        print('Multiple products')
-        details = {product: ComputeGraphSeries(start_date, end_date, point_features[0].geometry(),
-                                               PRODUCTS[product], timestep, statistic) for product in products}
-    else:
-        product = PRODUCTS[products[0]]
-        print('Multiple Features with product: ', product)
-        details = {
-            point.getInfo()['properties']['title']: ComputeGraphSeries(start_date, end_date, point.geometry(),
-                                                                       PRODUCTS[products[0]], timestep, statistic)
-            for point in point_features}
-        # for point in point_features:
-        #     details[point.getInfo()['properties']['title']] = GetPointData(start_date, end_date, product,
-        #                                                                    point, timestep, statistic)
-    print(details)
-    details = OrderForGraph(details)
-    # except (ee.EEException, HTTPException):
-    #     # Handle exceptions from the EE client library.
-    #     e = sys.exc_info()[0]
-    #     details['error'] = ErrorHandling(e)
-    # finally:
-    # Send the results to the browser.
-    print("Done getting Chart Data")
-    return details
+    try:
+        if len(products) > 1:
+            print('Multiple products')
+            chart_data = {product: ComputeGraphSeries(start_date, end_date, point_features[0].geometry(),
+                                                      PRODUCTS[product], timestep, statistic) for product in
+                          products}
+        else:
+            product = PRODUCTS[products[0]]
+            print('Multiple Features with product: ', product)
+            chart_data = {
+                point.getInfo()['properties']['title']: ComputeGraphSeries(start_date, end_date, point.geometry(),
+                                                                           PRODUCTS[products[0]], timestep, statistic)
+                for point in point_features}
+            # for point in point_features:
+            #     details[point.getInfo()['properties']['title']] = GetPointData(start_date, end_date, product,
+            #                                                                    point, timestep, statistic)
+        print(details)
+        details['chart_data'] = OrderForGraph(chart_data)
+    except (ee.EEException, HTTPException) as ex:
+        # Handle exceptions from the EE client library.
+        details['error'] = ErrorHandling(ex)
+    finally:
+        print("Done getting Chart Data")
+        return details
 
 
 ###############################################################################
@@ -493,8 +487,10 @@ def OrderForGraph(details):
 
 def ErrorHandling(e):
     print('Error getting graph data ERROR CAUGHT')
-    print(str(e))
-    return 'Area too large, deadline exceeded' if e is HTTPException else str(e)
+    print('type', type(e).__name__)
+    print('ex args', e.args)
+    print('Info', sys.exc_info())
+    return 'Area too large, timeout deadline exceeded' if 'Deadline' in e.args[0] else str(e)
 
 
 ###############################################################################
