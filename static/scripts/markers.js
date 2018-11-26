@@ -47,25 +47,25 @@ markers.addMarkerFromForm = function () {
         $('#error-message').show().html('Please enter a valid Latitude, Longitude and Title');
     } else {
         $('#error-message').hide();
-        markers.addMarker(lat, lng, title);
+        markers.addMarker(lng, lat, title);
     }
 };
 
 /**
  * Add marker to List and Table
  */
-markers.addMarkerFromLng = function (latLng, title) {
+markers.addMarkerFromLng = function (lnglat, title) {
     if (title === '') {
         title = myanmar.instance.markers.length.toString();
     }
     var marker = new google.maps.Marker({
-        position: latLng,
+        position: lnglat,
         map: myanmar.instance.map,
         title: title
     });
     console.log('Added marker: ' + marker.getTitle());
     myanmar.instance.markers.push(marker);
-    var tableContent = '<tr><td class="latlng">' + latLng + '</td><td class="title">' + title + '</td><td><button class="btn btn-danger remove-marker">Remove</button></td></tr>';
+    var tableContent = '<tr><td class="LngLat">' + lnglat + '</td><td class="title">' + title + '</td><td><button class="btn btn-danger remove-marker">Remove</button></td></tr>';
     $('.markers-table tbody').append(tableContent);
     output.reset();
 };
@@ -73,8 +73,8 @@ markers.addMarkerFromLng = function (latLng, title) {
 /**
  * Add marker
  */
-markers.addMarker = function (lat, lng, title) {
-    //nameing
+markers.addMarker = function (lng, lat, title) {
+    //nameing WTF WHY IS IT THE OPOSITE WAYY>..
     var position = new google.maps.LatLng(lat, lng);
     markers.addMarkerFromLng(position, title)
 };
